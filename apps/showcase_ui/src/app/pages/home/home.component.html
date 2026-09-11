@@ -32,7 +32,7 @@
     <!-- Task entry section -->
     <section class="hero-section">
       <h1 class="hero-title">
-        What would you like to do on your phone?
+        想在手机上执行什么任务？
       </h1>
     </section>
 
@@ -50,7 +50,7 @@
           } @else {
             <span class="material-symbols-outlined tab-icon">tune</span>
           }
-          <span class="tab-label">System Setup & Prerequisites</span>
+          <span class="tab-label">系统环境与设备准备</span>
         </button>
 
         <button
@@ -64,7 +64,7 @@
           } @else {
             <span class="material-symbols-outlined tab-icon">rocket_launch</span>
           }
-          <span class="tab-label">Launch Autonomous Task</span>
+          <span class="tab-label">启动自主执行任务</span>
         </button>
       </div>
     </div>
@@ -90,9 +90,9 @@
     </div>
     <div class="step-info">
       <div class="step-title-row">
-        <h3 class="step-title">System & Environment</h3>
+        <h3 class="step-title">系统与运行环境</h3>
       </div>
-      <p class="step-desc">Core tools, Android debug bridge, and video recording runtime</p>
+      <p class="step-desc">核心工具链、Android ADB 调试桥与屏幕录制套件</p>
     </div>
 
     <button
@@ -100,10 +100,10 @@
       class="btn-header-action"
       [disabled]="isRefreshingDiagnostics()"
       (click)="refreshReadiness()"
-      title="Re-check all system dependencies"
+      title="重新体检所有系统环境依赖"
     >
       <span class="material-symbols-outlined" [class.spinning]="isRefreshingDiagnostics()">refresh</span>
-      <span>{{ isRefreshingDiagnostics() ? 'Checking...' : 'Re-check' }}</span>
+      <span>{{ isRefreshingDiagnostics() ? '体检中...' : '重新体检' }}</span>
     </button>
   </div>
 
@@ -296,9 +296,9 @@
     </div>
     <div class="step-info">
       <div class="step-title-row">
-        <h3 class="step-title">AI Model Setup</h3>
+        <h3 class="step-title">大模型配置 (AI Model)</h3>
       </div>
-      <p class="step-desc">Google Gemini or custom LLM providers (OpenAI, Claude, Ollama)</p>
+      <p class="step-desc">Google Gemini 或自定义大模型提供商（OpenAI、中转站、Claude、Ollama 等）</p>
     </div>
   </div>
 
@@ -328,9 +328,9 @@
           <div class="choice-text">
             <div class="choice-title-row">
               <span class="choice-title">Google Gemini</span>
-              <span class="tag-badge tag-rec">Recommended</span>
+              <span class="tag-badge tag-rec">推荐首选</span>
             </div>
-            <p class="choice-desc">Fast multimodal reasoning with free API key from Google AI Studio.</p>
+            <p class="choice-desc">高速多模态屏幕视觉推理，支持 Google AI Studio 官方免费 API Key。</p>
           </div>
         </div>
       </div>
@@ -346,10 +346,9 @@
           </div>
           <div class="choice-text">
             <div class="choice-title-row">
-              <span class="choice-title">Custom Configuration</span>
+              <span class="choice-title">自定义模型 / 中转站配置</span>
             </div>
-            <p class="choice-desc">Define models in <code>config/artemis.jsonc</code> & keys in <code>.env</code>
-              (OpenAI, Claude, Ollama).</p>
+            <p class="choice-desc">在 <code>config/artemis.jsonc</code> 定义模型并在 <code>.env</code> 配置 Base URL 与密钥 (支持中转站、OpenAI、Claude、私有化 Ollama)。</p>
           </div>
         </div>
       </div>
@@ -503,22 +502,22 @@
               [disabled]="isSavingOcrKey() || isTestingOcrKey() || (!isOcrModified() && !ocrKeyInput().trim())" (click)="saveOcrKey()">
               @if (isSavingOcrKey()) {
               <span class="material-symbols-outlined spin">sync</span>
-              <span>{{ ocrKeyInput().trim() ? 'Verifying & Saving...' : 'Clearing...' }}</span>
+              <span>{{ ocrKeyInput().trim() ? '正在校验并保存...' : '正在清除...' }}</span>
               } @else {
               <span class="material-symbols-outlined">{{ ocrKeyInput().trim() ? 'save' : 'delete_outline' }}</span>
-              <span>{{ !ocrKeyInput().trim() ? 'Clear Key' : (isOcrModified() ? 'Save & Apply' : 'Save Key') }}</span>
+              <span>{{ !ocrKeyInput().trim() ? '清除密钥' : (isOcrModified() ? '保存并生效' : '保存密钥') }}</span>
               }
             </button>
 
             <!-- Test Button -->
-            <button type="button" class="btn-unified-test" title="Test if Vision OCR key is valid"
+            <button type="button" class="btn-unified-test" title="测试 Vision OCR 密钥是否有效"
               [disabled]="isTestingOcrKey() || isSavingOcrKey() || !ocrKeyInput().trim()" (click)="testOcrKey()">
               @if (isTestingOcrKey()) {
               <span class="material-symbols-outlined spin">sync</span>
-              <span>Testing...</span>
+              <span>测试连接中...</span>
               } @else {
               <span class="material-symbols-outlined">network_check</span>
-              <span>Test Key</span>
+              <span>测试密钥</span>
               }
             </button>
           </div>
@@ -549,25 +548,25 @@
           <div class="inspector-header-left">
             <span class="material-symbols-outlined header-icon">tune</span>
             <div class="inspector-header-titles">
-              <span class="inspector-title">Active Model Configuration</span>
-              <span class="inspector-subtitle">Defined in
+              <span class="inspector-title">当前模型生效配置</span>
+              <span class="inspector-subtitle">定义于配置文件：
                 <code>{{ modelConfigEnv()?.config_path || 'config/artemis.jsonc' }}</code></span>
             </div>
           </div>
           <div class="inspector-header-actions">
-            <button type="button" class="btn-file-action" title="Copy file path"
+            <button type="button" class="btn-file-action" title="复制文件路径"
               (click)="copyToClipboard(modelConfigEnv()?.config_path || 'config/artemis.jsonc', 'config_path_btn')"
             >
               <span class="material-symbols-outlined" [class.text-emerald]="copiedId() === 'config_path_btn'">
                 {{ copiedId() === 'config_path_btn' ? 'check' : 'content_copy' }}
               </span>
-              <span>Copy Path</span>
+              <span>复制路径</span>
               </button>
               <button type="button" class="btn-file-action btn-toggle-code" (click)="toggleFullConfigFile()">
                 <span class="material-symbols-outlined">
                   {{ showFullConfigFile() ? 'unfold_less' : 'code' }}
                 </span>
-                <span>{{ showFullConfigFile() ? 'Hide JSONC' : 'View JSONC' }}</span>
+                <span>{{ showFullConfigFile() ? '收起配置' : '查看完整配置' }}</span>
             </button>
           </div>
           </div>
@@ -575,7 +574,7 @@
           <!-- Model Summary Row -->
           <div class="inspector-summary-row">
             <div class="summary-metric">
-              <span class="metric-label">Default Model</span>
+              <span class="metric-label">默认全局模型</span>
               <div class="metric-val-pill">
                 <span class="provider-dot"></span>
                 <span class="provider-name">{{ modelConfigEnv()?.default_model?.provider || 'google' }}</span>
@@ -586,7 +585,7 @@
           
             @if (modelConfigEnv()?.default_model?.fallback) {
             <div class="summary-metric">
-              <span class="metric-label">Fallback Model</span>
+              <span class="metric-label">故障兜底模型</span>
               <div class="metric-val-pill secondary">
                 <span>{{ modelConfigEnv()?.default_model?.fallback?.provider }}/{{
                   modelConfigEnv()?.default_model?.fallback?.model }}</span>
@@ -701,7 +700,7 @@
               <span class="feedback-text">{{ adbRestartFeedback() }}</span>
               } @else {
               <span class="material-symbols-outlined">sync</span>
-              <span>{{ isRemoteAdbServer() ? 'Refresh Devices' : 'Restart ADB' }}</span>
+              <span>{{ isRemoteAdbServer() ? '刷新设备列表' : '重启 ADB 调试服务' }}</span>
               }
             </button>
           </div>
@@ -723,7 +722,7 @@
                     </div>
                     <div class="device-hero-meta">
                       @if (activeDevice()?.is_emulator) {
-                        <span>Virtual Device</span>
+                        <span>虚拟设备/模拟器</span>
                         <span class="meta-dot">·</span>
                       }
                       <span>{{ activeDevice()?.serial }}</span>
@@ -738,21 +737,21 @@
                       @if (isRemoteAdbServer()) {
                         <span class="meta-dot">·</span>
                         <span class="remote-endpoint-label">
-                          Remote via {{ adbServerStatus()?.endpoint?.host }}:{{ adbServerStatus()?.endpoint?.port }}
+                          远程连接 {{ adbServerStatus()?.endpoint?.host }}:{{ adbServerStatus()?.endpoint?.port }}
                         </span>
                       }
                     </div>
                   </div>
                   <div class="device-hero-status">
                     <span class="status-dot dot-pass"></span>
-                    <span class="status-text">Connected</span>
+                    <span class="status-text">已连接就绪</span>
                   </div>
                 </div>
 
                 <!-- Multi-Device Switcher if multiple devices detected -->
                 @if (connectedDevices().length > 1) {
                   <div class="multi-device-switcher">
-                    <span class="switcher-label">Select Active Device:</span>
+                    <span class="switcher-label">选择活动控制设备：</span>
                     <div class="switcher-chips">
                       @for (dev of connectedDevices(); track dev.serial) {
                         <button
@@ -766,7 +765,7 @@
                           </span>
                           <span>{{ dev.model || dev.serial }}</span>
                           @if (dev.serial === activeDevice()?.serial) {
-                            <span class="active-check">✓ Active</span>
+                            <span class="active-check">✓ 当前选中</span>
                           }
                         </button>
                       }

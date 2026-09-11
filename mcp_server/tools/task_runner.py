@@ -213,70 +213,25 @@ def mobile_run_task(
     verification_level: str | None = None,
     explorer_mode: str | None = None,
 ) -> dict[str, Any]:
-    """Starts an autonomous mobile UI automation subagent on a connected Android device.
+    """在已连接的 Android 设备上启动自主移动端自动化智能体任务。
 
-    Delegates a mobile workflow to a background agent. Non-blocking: returns
-    immediately with `trace_id` (for `mobile_manage_task` / `mobile_inspect_trace`),
-    `device_serial`, `stdout_log`/`stderr_log` paths, and `notes_dir` (Pro only).
-    On completion (success or failure) a Reactive Wakeup notifies you — but only
-    when `conversation_id` was provided; without it, rely on your fallback timer.
+    非阻塞执行：立即返回 `trace_id`、`device_serial`、日志路径 `stdout_log`/`stderr_log` 以及执行笔记目录 `notes_dir`。
+    支持在任务完成或失败时通过各平台通知器进行唤醒提醒。
 
-    ### Model selection (routing)
-    - **Flash** (default, preferred): simple, deterministic tasks with a clear
-      UI path. No step cap by default (history is compressed, and the agent
-      can recall earlier steps and query the session recording), but no ADB
-      shell, no pre-execution safety net, no persistent plan or notes, and
-      no verification or written report — unsuitable for exploration,
-      multi-branch recovery, structured monitoring/polling, or tasks that
-      must report back large amounts of detail.
-    - **Pro**: complex, exploratory, or multi-branch tasks; continuous
-      monitoring/polling; tasks needing ADB shell, system logs, verified
-      checkpoints, multi-step planning, or detailed written output (via notes
-      and `expected_output_desc`).
-
-    Timing is not precise: the agent's own inference adds ~5 s per step (Flash)
-    or ~30 s per turn (Pro) on top of any requested waits — account for this
-    when the task involves waiting. For recurring workflows, run once to
-    discover the path, then author a deterministic script instead of
-    re-delegating.
-
-    ### Follow-up protocol (CRITICAL)
-    1. **Fallback timer**: you MUST set a background timer and check the task
-       status via `mobile_manage_task` at least once every 1 minute — mobile
-       tasks can stall silently, so never rely on the completion wakeup alone.
-    2. **Post-task inspection**: after completion, inspect the execution logs
-       to verify success (`stderr_log` carries critical failures and Python
-       tracebacks — essential for debugging).
-    3. **Pro notes**: for Pro runs, read `notes_dir` to extract the results and
-       plans the subagent recorded.
+    ### 运行模型选择 (Model)
+    - **Flash** (默认推荐)：轻量、高确定性的常规操作流程。单模型反应式驱动（单步 3~5 秒），无额外编排开销，支持连续操作连击。
+    - **Pro**：复杂、需动态探索的多分支长流程任务；支持持续轮询监控、ADB 系统诊断、规划检查点断言验证以及生成结构化任务报告。
 
     Args:
-        task_desc: Clear, self-contained task description with all context,
-          exact UI actions, and termination conditions (execution is one-shot).
-          For Pro, may also specify what the subagent must record in its notes.
-        conversation_id: Optional conversation ID used to route the completion
-          wakeup notification back to the caller. Omit if unknown.
-        model: `"Flash"` or `"Pro"` — see model selection above.
-        locked_app_package: Optional package name to lock execution to; the
-          agent auto-launches it and restricts actions to that app.
-        app_path: Optional local APK path to install before running.
-        expected_output_desc: Optional, Pro only. If set, a summarization agent
-          writes a report to `output.md` in `notes_dir`. Ignored for Flash.
-        device_serial: Optional device serial (e.g. "emulator-5554") to bind
-          execution to a specific device; distinct devices run concurrently.
-          If omitted, an available device is selected automatically. When
-          several devices are attached, confirm the target with the user first
-          (`adb devices -l` lists serials and authorization states).
-        verification_level: Optional, Pro only. Coarse Checker preset: `"off"`
-          (no audit; the Operator self-reports), `"final"` (one exit review
-          against the goal, the default), `"checkpoints"` (every plan
-          checkpoint is verified + exit review), `"strict"` (checkpoints with
-          a larger repair budget; a failed assert halts the run). Ignored for
-          Flash.
-        explorer_mode: Optional, Pro only. Explorer perception version used
-          by the Operator: `"flash"` (1-shot detection, the default),
-          `"pro"` (3-turn ReAct), `"ultra"` (deep pixel reasoning; slowest).
-          Ignored for Flash.
+        task_desc: 完整、自包含的任务描述，包含操作目标、界面交互指令与结束条件。
+        conversation_id: 可选的会话 ID，用于在任务完成时将通知路由回调用方。
+        model: `"Flash"` 或 `"Pro"` 架构模式。
+        locked_app_package: 可选，锁定执行的应用包名（如 com.tencent.mm），智能体会自动拉起并限制在该 App 内操作。
+        app_path: 可选，运行前需要安装到设备上的本地 APK 文件路径。
+        expected_output_desc: 可选 (仅 Pro 模式)，期望生成的总结报告格式与内容。
+        device_serial: 可选的目标设备序列号（例如 "emulator-5554" 或真机序列号）。不指定时自动分配空闲设备。
+        verification_level: 可选 (仅 Pro 模式)，验证严格程度：`"off"`、`"final"` (默认)、`"checkpoints"`、`"strict"`。
+        explorer_mode: 可选 (仅 Pro 模式)，屏幕感知探索模式：`"flash"`、`"pro"`、`"ultra"`。
     """
     # 0. Validate and normalize model
     if model.lower() not in ("flash", "pro"):

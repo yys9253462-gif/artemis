@@ -32,22 +32,15 @@ from artemis.utils.visualization import format_minimal_list_with_elements
 
 @mcp.tool()
 async def mobile_get_device_state(view_type: str, device_serial: str | None = None) -> str:
-    """Real-time mobile device state observer (for debugging and validation).
+    """实时移动设备状态观察器（用于调试与界面状态确认）。
 
-    Retrieves a real-time screenshot or a simplified UI element tree from the
-    target device — useful for inspecting device status or tracking a
-    subagent's progress.
+    从目标手机实时获取屏幕截图或简化的 UI 元素树结构——用于查看当前手机屏幕状态或评估智能体的执行进度。
 
     Args:
-        view_type: Observation type:
-          - "screenshot": captures the screen, saves it to the workspace, and
-            returns the image's local file URI.
-          - "hierarchy": returns the simplified text-labeled element list —
-            exactly what the automation subagent sees when making decisions.
-        device_serial: Optional device serial (e.g. "emulator-5554") to inspect
-          a specific device; omitted → the default connected device. With
-          several devices attached, confirm the target with the user
-          (`adb devices -l` lists serials).
+        view_type: 观察数据类型：
+          - "screenshot": 截取当前屏幕，保存到工作区并返回本地文件路径。
+          - "hierarchy": 返回带有数字标签的简化 UI 元素列表——与智能体做决策时看到的完全一致。
+        device_serial: 可选的目标设备序列号（例如 "emulator-5554"），省略时自动选择默认连接的设备。
     """
     try:
         controller = _get_controller(device_serial=device_serial)

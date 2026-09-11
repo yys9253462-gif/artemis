@@ -58,44 +58,23 @@ async def mobile_inspect_trace(
     step_range: list[int] | None = None,
     max_results: int = 5,
 ) -> Any:
-    """Retrieves execution details of a mobile automation task (running or finished).
+    """查询并检索移动自动化任务的执行轨迹与详细步骤（支持运行中或已完成的任务）。
 
-    Use it to monitor progress, verify answers, and diagnose agent errors for
-    both Flash and Pro tasks. Every result includes the assigned `device_serial`.
+    用于监控执行进度、验证最终结果以及排查 Flash 和 Pro 模式下的智能体异常。
 
-    ### Actions
-    - **'view_summary'**: High-level execution summary across all steps.
-      Pro: hierarchical task plan with per-step status; Flash: full execution
-      chain with each step's reasoning and action.
-    - **'search'**: Deterministic keyword / step-range lookup over the full
-      stored history (screen descriptions, exact actions and results,
-      reasoning, tool calls, notes, on-screen OCR/UI-tree text incl.
-      package/activity names, compressed-history ledgers). Every hit carries
-      its step number; a `step_range` also returns that range's per-step
-      action ledger. Requires `query` and/or `step_range`.
-    - **'view_step_screenshots'**: Local file paths of one step's screenshots:
-      `before_screenshot` (what the agent saw), `after_screenshot` (only set
-      when the action failed/was intercepted, else null), and
-      `action_overlay_screenshot` (the action visually marked — e.g. red circle
-      for taps — key for verifying the agent tapped the right element).
-    - **'view_step_details'**: Full replay of one step exactly as the agent's
-      own context showed it: what the screen showed, its reasoning, every tool
-      call it made (name, arguments, result — e.g. what the explorer or OCR
-      reported), the planned action, any safety-net interception and the
-      execution result. Coordinates are normalized [x, y]. Works for Flash and
-      Pro tasks.
+    ### 支持动作 (action)
+    - **'view_summary'**：查看跨所有步骤的高层执行总结与结构化全景（Pro 模式显示分层任务规划与各步状态；Flash 模式展示思考与动作调用链）。
+    - **'search'**：关键词检索历史记录（屏幕描述、具体操作、思考、工具调用、OCR识别文字以及 UI 树结构）。
+    - **'view_step_screenshots'**：获取指定单步的屏幕截图文件路径（操作前截图、操作后截图以及绘制了红点/手势的动作叠加截图）。
+    - **'view_step_details'**：回放指定单步的完整上下文（屏幕所见、思考过程、工具调用参数与执行结果）。
 
     Args:
-        action: `"view_summary"`, `"search"`, `"view_step_screenshots"`, or
-          `"view_step_details"`.
-        trace_id: The task's session identifier from `mobile_run_task`.
-        step_number: 1-indexed step to query; required for the two per-step
-          actions, omit otherwise.
-        query: Keywords for `"search"` (case-insensitive; every
-          whitespace-separated term is matched independently).
-        step_range: Optional `[start, end]` step range (inclusive) for
-          `"search"`.
-        max_results: Maximum `"search"` hits to return (server-side cap applies).
+        action: `"view_summary"`、`"search"`、`"view_step_screenshots"` 或 `"view_step_details"`。
+        trace_id: `mobile_run_task` 返回的任务追踪 ID。
+        step_number: 步骤序号（单步查询时必填）。
+        query: 搜索关键词（action 为 search 时使用）。
+        step_range: 可选的步骤区间 `[起始步, 结束步]`。
+        max_results: 最大返回匹配结果数。
     """
     project_root = env_utils.get_project_root()
     db_path = os.path.join(trace_store.TRACES_DIR, "data_engine.db")

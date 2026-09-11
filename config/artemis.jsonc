@@ -1,10 +1,10 @@
 {
   // ==============================================================================
-  // ☕ ARTEMIS Autonomous Agent & Framework Configuration
+  // ☕ ARTEMIS 自主移动智能体核心配置 (全中文注解)
   // ==============================================================================
 
   // ------------------------------------------------------------------------------
-  // 1. Global Default Model (Applied to all sub-agents unless overridden below)
+  // 1. 全局默认模型配置 (各子节点未显式指定时均继承此项)
   // ------------------------------------------------------------------------------
   "default": {
     "provider": "google",
@@ -18,7 +18,7 @@
   },
 
   // ------------------------------------------------------------------------------
-  // 2. Ready-to-Use Presets (Switch easily in code or CLI)
+  // 2. 常用开箱即用模型预设 (可通过代码或 CLI 一键切换)
   // ------------------------------------------------------------------------------
   "presets": {
     "gemini-flagship": {
@@ -49,31 +49,24 @@
   },
 
   // ------------------------------------------------------------------------------
-  // 3. Agent & Sub-Agent Node Customizations (Optional - Inherits from 'default')
+  // 3. 智能体各执行节点专属配置 (可选 - 默认继承全局 'default')
   // ------------------------------------------------------------------------------
   "nodes": {
-    // 🧠 Planner: High-level goal decomposition and strategic step planning
+    // 🧠 规划器 (Planner): 负责高层次目标拆解与分步执行策略生成
     "planner": {
       "thinking_level": "high"
     },
 
-    // 🎯 Operator: Screen perception, element interaction, and direct execution
+    // 🎯 操作执行器 (Operator): 负责屏幕多模态感知、元素交互与精准动作派发
     "operator": {
       "thinking_level": "medium",
       "include_thoughts": true
     },
 
-    // 🎬 Video Analyzer: Multimodal screen recording verification and temporal analysis
-    // NOTE: Dual-path engine automatically routes:
-    //  - Native Gemini Files API for Gemini models with Google API keys (long video file stream);
-    //    Gemini 3.6+ Flash sub-agents use agentic video understanding by default (see video_analyzer.processing below)
-    //  - Universal Multi-Model Engine for Claude 3.5/3.7, GPT-4o, OpenRouter, Vertex AI (dynamic keyframe extraction + multimodal tool calling)
+    // 🎬 视频分析器 (Video Analyzer): 屏幕录像回放验证与时序动作诊断
     "video_analyzer": {},
 
-    // 👁️ Object Detector & Explorer (Flash Mode): Visual coordinates grounding and bounding boxes
-    // CRITICAL REQUIREMENT: Standard LLMs (including standard Gemini Flash, GPT-4o, Claude 3.7) lack sub-pixel spatial coordinate fine-tuning.
-    // To achieve accurate [x, y] point and bounding box localization, this node MUST use specialized Gemini ER (Embodied Reasoning / Robotics) models:
-    // e.g., "gemini-robotics-er-2-preview". Non-ER models will fail spatial coordinate detection.
+    // 👁️ 目标探测器与探索器 (Flash 模式): 像素级绝对坐标定位与目标候选边界框
     "object_detector": {
       "model": "gemini-robotics-er-2-preview",
       "fallback": {
@@ -82,15 +75,12 @@
       }
     },
 
-    // 🔍 Explorer: Deep element grounding and multi-candidate visual search
-    // NOTE:
-    //  - "flash" version delegates directly to object_detector (requires Gemini ER model above).
-    //  - "pro" / "ultra" versions run multi-turn ReAct loops (supports both Native Gemini and Universal Multi-Model LangChain engines).
+    // 🔍 深度探索器 (Explorer): 复杂多状态元素的视觉对齐与深度搜索
     "explorer": {
       "thinking_level": "medium"
     },
 
-    // 📋 Summarizer: Aggregates step history and generates structured outcome
+    // 📋 总结器 (Summarizer): 汇总完整执行轨迹并输出结构化任务执行报告
     "summarizer": {},
 
     // 🔽 Hopper: Fast lightweight package name locator

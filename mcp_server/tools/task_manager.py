@@ -222,45 +222,20 @@ def mobile_manage_task(
     instruction: str | None = None,
     release_loop: bool = False,
 ) -> dict[str, Any]:
-    """Manages the lifecycle and retrieves the status of a background mobile automation task.
+    """管理后台移动自动化任务的生命周期并查询执行状态。
 
-    This is your primary diagnostic and control tool for tasks started by
-    `mobile_run_task`. You MUST use it to poll the task status when your
-    1-minute fallback timer triggers (as required by `mobile_run_task`). You
-    can also steer a subagent that is stuck or off-track, or abort a task.
+    这是对 `mobile_run_task` 所启动任务进行状态轮询、实时干预和控制的核心工具。
 
-    ### Actions
-    - **'status'**: Returns `trace_id`, `status` ('running'/'completed'/'failed'/
-      'cancelled'), `device_serial` (which phone owns this task in multi-device
-      setups), `task_desc`, `model`, `elapsed_seconds`, a `test_summary` (when
-      the run declared verification check items: machine-readable
-      passed/failed/inconclusive/unchecked counts plus failed-item details —
-      no need to parse report prose), and `progress` (Flash:
-      current turn, latest thought/action — intervene if turns climb without
-      progress or the thought indicates it is stuck; Pro: the active task plan
-      — check it still aligns with your goal).
-    - **'inject_instruction'**: Injects real-time guidance mid-flight when the
-      subagent errs, stalls, or loops. Applied at the start of the next
-      planning turn (Pro) or the next reactive loop (Flash). Requires
-      `instruction` (unless `release_loop=True`). To end a continuous
-      monitoring task ([Loop:continuous] milestone) gracefully, you MUST pass
-      `release_loop=True` — this is the only signal that unlocks the
-      milestone's completion; natural-language "please stop" phrasing in
-      `instruction` is NOT interpreted as a stop signal.
-    - **'stop'**: Forcefully terminates the subagent, immediately halting
-      device interactions and releasing the device. Use when the task is done,
-      irreparably broken, or running out of control. Prefer
-      `inject_instruction` with `release_loop=True` when a monitoring task
-      should wind down cleanly instead of being killed.
+    ### 支持动作 (action)
+    - **'status'**：查询任务状态（running/completed/failed/cancelled）、执行耗时、设备序列号、测试断言结果汇总以及当前步骤进展。
+    - **'inject_instruction'**：在任务执行过程中动态注入纠偏指令（例如智能体卡住、进入死循环时给与引导）。如果要优雅结束持续监控型任务，可设置 `release_loop=True`。
+    - **'stop'**：强制终止后台任务，立刻停止设备交互并释放设备控制锁。
 
     Args:
-        action: `"status"`, `"inject_instruction"`, or `"stop"`.
-        trace_id: The task's session identifier from `mobile_run_task`.
-        instruction: Guidance string; required for `inject_instruction`
-          (optional when `release_loop=True`), omit otherwise.
-        release_loop: With `inject_instruction`: explicit user stop signal
-          that authorizes the subagent to complete continuous monitoring
-          loops and finish the task gracefully.
+        action: 操作类型，可选 `"status"`、`"inject_instruction"` 或 `"stop"`。
+        trace_id: `mobile_run_task` 返回的任务追踪 ID。
+        instruction: 实时注入的指导说明文本（action 为 inject_instruction 时必填）。
+        release_loop: 配合 inject_instruction 使用，显式向智能体发送跳出持续循环监控的信号。
     """
     status_data = trace_store.read_status(trace_id)
     if not status_data:

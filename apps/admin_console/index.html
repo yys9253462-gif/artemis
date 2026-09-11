@@ -19,7 +19,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Artemis Debug UI</title>
+    <title>Artemis 调试控制台</title>
     <link rel="icon" type="image/png" sizes="192x192" href="/logo.png?v=2">
     <link rel="icon" type="image/png" sizes="32x32" href="/logo.png?v=2">
     <link rel="icon" type="image/svg+xml" href="/logo.svg?v=2">
@@ -237,41 +237,41 @@
 </head>
 <body>
     <div id="sidebar">
-        <h2>Run Task</h2>
+        <h2>执行任务</h2>
         <div style="margin-bottom: 20px;">
-            <textarea id="task-goal" style="width: 100%; height: 60px; border-radius: 4px; border: 1px solid #e2e8f0; padding: 8px; box-sizing: border-box; font-family: inherit;" placeholder="Enter task goal..."></textarea>
+            <textarea id="task-goal" style="width: 100%; height: 60px; border-radius: 4px; border: 1px solid #e2e8f0; padding: 8px; box-sizing: border-box; font-family: inherit;" placeholder="请输入任务指令目标，例如：打开设置调整屏幕亮度..."></textarea>
             <div style="margin-top: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; color: #475569;">
-                <label for="task-profile-select" style="font-weight: 600;">Agent Architecture:</label>
+                <label for="task-profile-select" style="font-weight: 600;">智能体运行架构：</label>
                 <select id="task-profile-select" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e0; font-size: 0.85rem; background-color: #f8fafc; color: #334155; outline: none; cursor: pointer; flex: 1; margin-left: 10px;">
-                    <option value="flash">⚡ Flash (Reactive Fast Loop)</option>
-                    <option value="pro">🚀 Pro (Multi-Agent Cognitive Graph)</option>
+                    <option value="flash">⚡ 极速模式 Flash (单模型反应式执行)</option>
+                    <option value="pro">🚀 深度模式 Pro (多智能体认知图谱)</option>
                 </select>
             </div>
             <div style="display: flex; gap: 10px; margin-top: 5px;">
-                <button class="refresh-btn" style="flex: 1; margin-bottom: 0;" onclick="runTask()">Run Task</button>
-                <button class="refresh-btn" style="flex: 1; margin-bottom: 0; background-color: #e53e3e;" onclick="stopTask()">Stop Task</button>
+                <button class="refresh-btn" style="flex: 1; margin-bottom: 0;" onclick="runTask()">启动任务</button>
+                <button class="refresh-btn" style="flex: 1; margin-bottom: 0; background-color: #e53e3e;" onclick="stopTask()">停止任务</button>
             </div>
             <div style="display: flex; gap: 10px; margin-top: 5px;">
-                <button class="refresh-btn" id="resume-btn" style="flex: 1; margin-bottom: 0; background-color: #38a169; display: none;" onclick="resumeTask()">Resume Task</button>
+                <button class="refresh-btn" id="resume-btn" style="flex: 1; margin-bottom: 0; background-color: #38a169; display: none;" onclick="resumeTask()">恢复任务</button>
             </div>
             <div id="run-status" style="font-size: 0.85rem; margin-top: 5px;"></div>
         </div>
-        <h2>Sessions</h2>
+        <h2>会话记录</h2>
         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-            <button class="refresh-btn" style="flex: 1; margin-bottom: 0;" onclick="loadSessions()">Refresh List</button>
-            <button class="refresh-btn" style="flex: 1; margin-bottom: 0; background-color: #e53e3e;" onclick="cleanupHistory()">Clean History</button>
+            <button class="refresh-btn" style="flex: 1; margin-bottom: 0;" onclick="loadSessions()">刷新列表</button>
+            <button class="refresh-btn" style="flex: 1; margin-bottom: 0; background-color: #e53e3e;" onclick="cleanupHistory()">清空历史</button>
         </div>
         <div style="margin-bottom: 15px;">
-            <input type="text" id="session-search-input" oninput="filterSessionsList()" placeholder="🔍 Filter by Session ID or Goal..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e0; font-size: 0.85rem; box-sizing: border-box; outline: none; background-color: #fff; color: #1e293b; transition: border-color 0.2s, box-shadow 0.2s;" onfocus="this.style.borderColor='#3182ce'; this.style.boxShadow='0 0 0 2px rgba(49,130,206,0.2)';" onblur="this.style.borderColor='#cbd5e0'; this.style.boxShadow='none';"/>
+            <input type="text" id="session-search-input" oninput="filterSessionsList()" placeholder="🔍 按会话 ID 或任务目标搜索..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e0; font-size: 0.85rem; box-sizing: border-box; outline: none; background-color: #fff; color: #1e293b; transition: border-color 0.2s, box-shadow 0.2s;" onfocus="this.style.borderColor='#3182ce'; this.style.boxShadow='0 0 0 2px rgba(49,130,206,0.2)';" onblur="this.style.borderColor='#cbd5e0'; this.style.boxShadow='none';"/>
         </div>
-        <div id="session-list">Loading sessions...</div>
+        <div id="session-list">加载会话列表中...</div>
     </div>
     <div id="content">
         <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 10px;">
             <div style="display: flex; align-items: flex-start; gap: 15px; flex: 1;">
-                <button onclick="toggleSidebar()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0; color: #4a5568; margin-top: 5px;" title="Toggle Sidebar">☰</button>
+                <button onclick="toggleSidebar()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0; color: #4a5568; margin-top: 5px;" title="收起/展开侧边栏">☰</button>
                 <div id="session-header" style="flex: 1;">
-                    <h1 style="margin-top: 0;">Select a session from the sidebar</h1>
+                    <h1 style="margin-top: 0;">请从左侧选择一个会话</h1>
                 </div>
             </div>
 
@@ -279,26 +279,26 @@
         
         <!-- Tab Navigation Bar -->
         <div id="session-tabs-bar" style="display: none; gap: 8px; border-bottom: 2px solid #edf2f7; padding-bottom: 8px; margin-bottom: 15px; align-items: center;">
-            <button class="tab-btn active" onclick="switchTab('steps')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; border-bottom: 2px solid #3182ce; color: #3182ce; transition: color 0.2s, border-color 0.2s; outline: none;">👣 Steps Timeline</button>
-            <button class="tab-btn" onclick="switchTab('traces')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; color: #718096; transition: color 0.2s, border-color 0.2s; outline: none;">🌳 Traces Tree</button>
-            <button class="tab-btn" onclick="switchTab('replay')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; color: #718096; transition: color 0.2s, border-color 0.2s; outline: none;">🔄 Step Replay</button>
+            <button class="tab-btn active" onclick="switchTab('steps')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; border-bottom: 2px solid #3182ce; color: #3182ce; transition: color 0.2s, border-color 0.2s; outline: none;">👣 执行步骤时序</button>
+            <button class="tab-btn" onclick="switchTab('traces')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; color: #718096; transition: color 0.2s, border-color 0.2s; outline: none;">🌳 追踪调用树 (Traces)</button>
+            <button class="tab-btn" onclick="switchTab('replay')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; color: #718096; transition: color 0.2s, border-color 0.2s; outline: none;">🔄 动作回放 (Replay)</button>
             
             <div style="margin-left: auto; display: flex; gap: 8px;">
-                <button class="refresh-btn" style="margin-bottom: 0; background-color: #38bdf8; color: #0f172a; font-weight: bold;" onclick="openNotesModal()">📚 View All Notes</button>
-                <button class="refresh-btn" style="margin-bottom: 0; background-color: #38bdf8; color: #0f172a; font-weight: bold;" onclick="openPlanModal()">📋 View Task Plan</button>
+                <button class="refresh-btn" style="margin-bottom: 0; background-color: #38bdf8; color: #0f172a; font-weight: bold;" onclick="openNotesModal()">📚 查看执行笔记</button>
+                <button class="refresh-btn" style="margin-bottom: 0; background-color: #38bdf8; color: #0f172a; font-weight: bold;" onclick="openPlanModal()">📋 查看任务规划</button>
             </div>
         </div>
         
         <!-- Steps Timeline Tab Panel -->
         <div id="steps-container" style="display: none;">
-            <div style="padding: 20px; color: #718096; text-align: center;">Select a session from the sidebar to view steps.</div>
+            <div style="padding: 20px; color: #718096; text-align: center;">请在左侧边栏中选择一个会话以查看步骤。</div>
         </div>
         
         <!-- Traces Tree Tab Panel -->
         <div id="traces-container-wrapper" style="display: none;">
             <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
                 <label style="font-size: 0.9rem; color: #4a5568; cursor: pointer; user-select: none;">
-                    <input type="checkbox" id="show-logs-check" onchange="loadTree()" style="margin-right: 4px;"/> Show Log Traces
+                    <input type="checkbox" id="show-logs-check" onchange="loadTree()" style="margin-right: 4px;"/> 显示日志调用链 (Log Traces)
                 </label>
             </div>
             <div id="tree-container"></div>
@@ -312,7 +312,7 @@
             <div style="background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; gap: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 20px; flex-shrink: 0;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 1.25rem;">🔄</span>
-                    <h2 style="margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 700;">Interactive Step Replay Timeline</h2>
+                    <h2 style="margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 700;">交互式单步动作回放时间轴</h2>
                 </div>
             </div>
 
@@ -323,7 +323,7 @@
 
             <!-- Steps Replay Vertical Timeline Container -->
             <div id="replay-timeline-container">
-                <div style="padding: 40px; color: #718096; text-align: center; font-size: 1.1rem;">Select a session from the sidebar to load the replay timeline.</div>
+                <div style="padding: 40px; color: #718096; text-align: center; font-size: 1.1rem;">请从左侧选择一个会话以加载动作回放。</div>
             </div>
         </div>
     </div>
@@ -332,14 +332,14 @@
     <div id="plan-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
         <div style="background-color: #1e293b; color: #f8fafc; width: 700px; max-width: 90%; max-height: 80vh; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #334155;">
             <div style="padding: 16px 24px; background-color: #0f172a; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="margin: 0; color: #38bdf8; font-size: 1.25rem; font-weight: 600;">📋 Active Task Plan</h2>
+                <h2 style="margin: 0; color: #38bdf8; font-size: 1.25rem; font-weight: 600;">📋 智能体任务规划</h2>
                 <button onclick="closePlanModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</button>
             </div>
             <div style="padding: 24px; overflow-y: auto; flex: 1;">
-                <pre id="plan-modal-content" style="margin: 0; background-color: #0f172a; padding: 16px; border-radius: 8px; color: #e2e8f0; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; white-space: pre-wrap;">Loading task plan...</pre>
+                <pre id="plan-modal-content" style="margin: 0; background-color: #0f172a; padding: 16px; border-radius: 8px; color: #e2e8f0; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; white-space: pre-wrap;">正在读取任务规划...</pre>
             </div>
             <div style="padding: 12px 24px; background-color: #0f172a; border-top: 1px solid #334155; text-align: right;">
-                <button class="refresh-btn" style="margin: 0; background-color: #38bdf8; color: #0f172a; font-weight: bold;" onclick="fetchTaskPlan()">Refresh Plan</button>
+                <button class="refresh-btn" style="margin: 0; background-color: #38bdf8; color: #0f172a; font-weight: bold;" onclick="fetchTaskPlan()">刷新规划</button>
             </div>
         </div>
     </div>
@@ -348,14 +348,14 @@
     <div id="notes-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
         <div style="background-color: #1e293b; color: #f8fafc; width: 800px; max-width: 90%; max-height: 80vh; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #334155;">
             <div style="padding: 16px 24px; background-color: #0f172a; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="margin: 0; color: #38bdf8; font-size: 1.25rem; font-weight: 600;">📚 All Notes</h2>
+                <h2 style="margin: 0; color: #38bdf8; font-size: 1.25rem; font-weight: 600;">📚 执行过程笔记</h2>
                 <button onclick="closeNotesModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</button>
             </div>
             <div style="padding: 24px; overflow-y: auto; flex: 1;" id="notes-modal-content">
-                Loading notes...
+                正在读取笔记...
             </div>
             <div style="padding: 12px 24px; background-color: #0f172a; border-top: 1px solid #334155; text-align: right;">
-                <button class="refresh-btn" style="margin: 0; background-color: #38bdf8; color: #0f172a; font-weight: bold;" onclick="fetchAllNotes()">Refresh Notes</button>
+                <button class="refresh-btn" style="margin: 0; background-color: #38bdf8; color: #0f172a; font-weight: bold;" onclick="fetchAllNotes()">刷新笔记</button>
             </div>
         </div>
     </div>
@@ -859,10 +859,10 @@
             
             if (runningTasks.length > 0) {
                 spinner.style.display = 'block';
-                barText.innerText = `Background Tasks (Running: ${runningTasks.length}, Completed: ${completedTasks.length}) - Latest: ${runningTasks[runningTasks.length - 1].summary}`;
+                barText.innerText = `后台任务 (运行中: ${runningTasks.length}, 已完成: ${completedTasks.length}) - 最新: ${runningTasks[runningTasks.length - 1].summary}`;
             } else {
                 spinner.style.display = 'none';
-                barText.innerText = `All background tasks completed (${tasks.length})`;
+                barText.innerText = `所有后台任务已完成 (${tasks.length})`;
             }
             
             if (isBackgroundTaskPanelOpen) {
@@ -3620,21 +3620,21 @@
                 const data = await res.json();
                 const statusDiv = document.getElementById('run-status');
                 if (data.status === 'running') {
-                    statusDiv.innerHTML = `<span style="color: #3182ce; font-weight: 600;">⚡ Active Task:</span> <span style="color: #2d3748;">${escapeHtml(data.goal)}</span> <small style="color: #a0aec0;">(PID: ${escapeHtml(data.pid)})</small>`;
+                    statusDiv.innerHTML = `<span style="color: #3182ce; font-weight: 600;">⚡ 正在执行任务:</span> <span style="color: #2d3748;">${escapeHtml(data.goal)}</span> <small style="color: #a0aec0;">(PID: ${escapeHtml(data.pid)})</small>`;
                     document.getElementById('resume-btn').style.display = 'none';
                 } else if (data.status === 'completed') {
                     const color = data.returncode === 0 ? '#38a169' : '#e53e3e';
-                    const text = data.returncode === 0 ? 'Successfully Completed' : `Failed (Exit ${escapeHtml(data.returncode)})`;
-                    statusDiv.innerHTML = `<span style="color: ${color}; font-weight: 600;">✓ Task ${text}:</span> <span style="color: #2d3748;">${escapeHtml(data.goal)}</span>`;
+                    const text = data.returncode === 0 ? '已顺利完成' : `执行失败 (退出代码 ${escapeHtml(data.returncode)})`;
+                    statusDiv.innerHTML = `<span style="color: ${color}; font-weight: 600;">✓ 任务${text}:</span> <span style="color: #2d3748;">${escapeHtml(data.goal)}</span>`;
                     document.getElementById('resume-btn').style.display = 'none';
                 } else if (data.status === 'paused') {
-                    if (!statusDiv.innerText.includes('Task Paused')) {
-                         statusDiv.innerHTML = `<span style="color: #e53e3e; font-weight: 600;">⏸️ Task Paused:</span> <span style="color: #2d3748;">${escapeHtml(data.goal)}</span>`;
+                    if (!statusDiv.innerText.includes('Task Paused') && !statusDiv.innerText.includes('任务已暂停')) {
+                         statusDiv.innerHTML = `<span style="color: #e53e3e; font-weight: 600;">⏸️ 任务已暂停:</span> <span style="color: #2d3748;">${escapeHtml(data.goal)}</span>`;
                     }
                     document.getElementById('resume-btn').style.display = 'block';
                 } else {
-                    if (!statusDiv.innerHTML || statusDiv.innerText.includes('Active Task') || statusDiv.innerText.includes('Stopping task') || statusDiv.innerText.includes('Task Paused')) {
-                        statusDiv.innerHTML = '<span style="color: #718096;">No background task running</span>';
+                    if (!statusDiv.innerHTML || statusDiv.innerText.includes('Active Task') || statusDiv.innerText.includes('正在执行') || statusDiv.innerText.includes('Stopping task') || statusDiv.innerText.includes('Task Paused') || statusDiv.innerText.includes('任务已暂停')) {
+                        statusDiv.innerHTML = '<span style="color: #718096;">暂无后台任务运行</span>';
                     }
                     document.getElementById('resume-btn').style.display = 'none';
                 }
@@ -3682,24 +3682,24 @@
         window.addEventListener('beforeunload', flushNodeStreamsPersist);
 
         async function cleanupHistory() {
-            if (!confirm("Are you sure you want to clean up all database history, images, and trace files? This action cannot be undone.")) {
+            if (!confirm("您确定要清空所有数据库历史记录、图片和追踪日志吗？此操作不可撤销。")) {
                 return;
             }
             try {
                 const res = await fetch('/api/cleanup', { method: 'POST' });
                 const data = await res.json();
                 if (res.ok) {
-                    alert("Cleanup successful!");
+                    alert("历史记录清理成功！");
                     currentSessionId = null;
-                    document.getElementById('session-header').innerHTML = `<h1>Select a session from the sidebar</h1>`;
+                    document.getElementById('session-header').innerHTML = `<h1>请从左侧选择一个会话</h1>`;
                     document.getElementById('tree-container').innerHTML = '';
                     document.getElementById('details-container').innerHTML = '';
                     loadSessions();
                 } else {
-                    alert(`Cleanup failed: ${data.detail || 'Unknown error'}`);
+                    alert(`清理失败: ${data.detail || '未知错误'}`);
                 }
             } catch (err) {
-                alert(`Error during cleanup: ${err.message}`);
+                alert(`清理过程中发生异常: ${err.message}`);
             }
         }
 
@@ -3718,8 +3718,8 @@
         <!-- Panel Body (expandable drawer) -->
         <div id="global-task-panel" style="max-height: 450px; overflow-y: auto; padding: 20px; border-bottom: 1px solid #2d3748; display: none; background-color: #111827;">
             <h3 style="color: #e2e8f0; margin-top: 0; margin-bottom: 15px; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
-                <span class="pill" style="background-color: #d69e2e; color: #1a202c;">Async Tasks</span>
-                <span>Background Tasks Tracker</span>
+                <span class="pill" style="background-color: #d69e2e; color: #1a202c;">异步任务</span>
+                <span>后台任务跟踪器</span>
             </h3>
             <div id="background-tasks-list" style="display: flex; flex-direction: column; gap: 12px;">
                 <!-- Task items dynamically injected -->
@@ -3728,12 +3728,12 @@
         <!-- Header Bar -->
         <div id="global-task-bar" style="padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background-color: #1a202c; transition: background-color 0.2s;" onclick="toggleBackgroundTaskPanel()" onmouseover="this.style.backgroundColor='#2d3748'" onmouseout="this.style.backgroundColor='#1a202c'">
             <div style="display: flex; align-items: center; gap: 12px;">
-                <span class="pill" style="background-color: #d69e2e; color: #1a202c;">Async Tasks</span>
+                <span class="pill" style="background-color: #d69e2e; color: #1a202c;">异步任务</span>
                 <span id="task-bar-text" style="font-family: monospace; color: #e2e8f0; font-size: 0.85rem;"></span>
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div id="task-bar-spinner" class="spinner" style="width: 14px; height: 14px; border: 2px solid #e2e8f0; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: none;"></div>
-                <span id="task-panel-toggle-icon" style="color: #94a3b8; font-size: 0.8rem; font-weight: bold;">▲ Expand</span>
+                <span id="task-panel-toggle-icon" style="color: #94a3b8; font-size: 0.8rem; font-weight: bold;">▲ 展开</span>
             </div>
         </div>
     </div>
@@ -3744,16 +3744,16 @@
     <!-- Floating Mini Video Player -->
     <div id="floating-video-container" style="position: fixed; bottom: 60px; right: 20px; display: none; background: white; padding: 12px 15px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1050; border: 1px solid #ccc;">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">
-            <div style="font-weight: bold; font-size: 14px; color: #2c3e50; display: flex; align-items: center; gap: 6px;">📹 Run Video</div>
+            <div style="font-weight: bold; font-size: 14px; color: #2c3e50; display: flex; align-items: center; gap: 6px;">📹 运行录屏回放</div>
             <div style="display: flex; align-items: center; gap: 8px;">
-                <button onclick="reloadSessionVideo()" style="cursor: pointer; background: none; border: none; font-size: 14px; outline: none; padding: 2px 4px;" title="Reload Video">🔄</button>
+                <button onclick="reloadSessionVideo()" style="cursor: pointer; background: none; border: none; font-size: 14px; outline: none; padding: 2px 4px;" title="重新加载录屏">🔄</button>
                 <select id="video-speed" onchange="document.getElementById('global-video').playbackRate = parseFloat(this.value)" style="font-size: 12px; padding: 2px; border-radius: 4px; border: 1px solid #ccc; background: white;">
-                    <option value="1">1x</option>
-                    <option value="2">2x</option>
-                    <option value="4">4x</option>
-                    <option value="8">8x</option>
+                    <option value="1">1x 正常</option>
+                    <option value="2">2x 倍速</option>
+                    <option value="4">4x 倍速</option>
+                    <option value="8">8x 倍速</option>
                 </select>
-                <button onclick="toggleVideoContent()" id="video-toggle-btn-icon" style="cursor: pointer; background: none; border: none; font-size: 14px; color: #2c3e50; outline: none; padding: 2px 4px;" title="Expand / Collapse">➕</button>
+                <button onclick="toggleVideoContent()" id="video-toggle-btn-icon" style="cursor: pointer; background: none; border: none; font-size: 14px; color: #2c3e50; outline: none; padding: 2px 4px;" title="展开 / 收起">➕</button>
             </div>
         </div>
         <div id="video-content" style="position: relative; width: 320px; display: none; margin-top: 10px;">
@@ -3765,9 +3765,9 @@
             </div>
             <div id="video-error-box" style="display: none; background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; padding: 20px 15px; border-radius: 8px; font-size: 0.9rem; text-align: center;">
                 <div style="font-size: 1.5rem; margin-bottom: 8px;">⚠️</div>
-                <strong style="display: block; margin-bottom: 4px;">No Recording Found</strong>
+                <strong style="display: block; margin-bottom: 4px;">未找到录屏文件</strong>
                 <div id="video-error-text" style="font-size: 0.8rem; color: #742a2a; line-height: 1.4;">
-                    No video recording file was found for this session on disk or database records.
+                    本地磁盘或数据库记录中未找到当前会话的视频录像文件。
                 </div>
             </div>
         </div>

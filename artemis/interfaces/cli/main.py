@@ -40,32 +40,32 @@ logger = get_logger(__name__)
 
 app = typer.Typer(
     name="artemis",
-    help="☕ Artemis: Autonomous Multimodal Android Agent & Testing Framework.",
+    help="☕ Artemis：下一代自主式多模态 Android 智能体与自动化测试框架。",
     add_completion=False,
     pretty_exceptions_enable=False,
     no_args_is_help=True,
 )
 
 # Register subcommands
-app.command(name="ui", help="Launch the unified Showcase UI & Admin Console in your browser.")(
+app.command(name="ui", help="在浏览器中启动 Artemis 交互控制台与 Web 调试面板。")(
     ui_command
 )
-app.command(name="restart", help="Restart running Artemis Web UI & server.")(restart_command)
-app.command(name="stop", help="Stop running Artemis Web UI & server.")(stop_command)
-app.command(name="status", help="Display Artemis Web UI & server status.")(status_command)
-app.command(name="run", help="Execute an autonomous task on a mobile device.")(run_command)
-app.command(name="init", help="Interactive quickstart wizard to configure API keys & device.")(
+app.command(name="restart", help="重启正在运行的 Artemis Web 服务。")(restart_command)
+app.command(name="stop", help="停止运行中的 Artemis Web 服务。")(stop_command)
+app.command(name="status", help="查看 Artemis Web 服务当前运行状态。")(status_command)
+app.command(name="run", help="在目标移动设备上执行自主自动化任务。")(run_command)
+app.command(name="init", help="交互式初始化向导：配置大模型 API 密钥与设备连接。")(
     init_command
 )
-app.command(name="doctor", help="Check system prerequisites, device status, and configuration.")(
+app.command(name="doctor", help="系统体检：检查运行环境依赖、ADB 连接与配置状态。")(
     doctor_command
 )
-app.command(name="batch", help="Execute a batch sequence of automation tasks.")(batch_command)
-app.command(name="mcp", help="Start the Artemis Model Context Protocol (MCP) server.")(mcp_command)
-app.add_typer(server_app, name="server", help="Cloud Run proxy and web dashboard server.")
-app.add_typer(trace_app, name="trace", help="Inspect and query execution traces.")
+app.command(name="batch", help="批量执行多个自动化任务工作流。")(batch_command)
+app.command(name="mcp", help="启动 Artemis 原生 Model Context Protocol (MCP) 服务。")(mcp_command)
+app.add_typer(server_app, name="server", help="服务端代理与云控 Web 仪表盘服务。")
+app.add_typer(trace_app, name="trace", help="检查与分析任务执行轨迹 (Traces)。")
 app.add_typer(
-    helper_app, name="helper", help="Manage the Accessibility Helper APK on attached devices."
+    helper_app, name="helper", help="管理已连接真机上的轻量无障碍辅助插件 (Accessibility Helper)。"
 )
 
 
@@ -74,8 +74,8 @@ def version_callback(value: bool):
         console = Console()
         console.print(
             Panel(
-                f"[bold cyan]Artemis Agent Platform[/bold cyan] v{__version__}\n"
-                "[dim]Autonomous Multimodal Mobile AI Engine[/dim]",
+                f"[bold cyan]Artemis 移动智能体平台[/bold cyan] v{__version__}\n"
+                "[dim]自主多模态移动端 AI 执行引擎[/dim]",
                 title="☕ Artemis",
                 expand=False,
             )
@@ -90,13 +90,13 @@ def main_callback(
         typer.Option(
             "--version",
             "-v",
-            help="Show Artemis version and exit.",
+            help="显示 Artemis 版本号并退出。",
             callback=version_callback,
             is_eager=True,
         ),
     ] = False,
 ):
-    """ARTEMIS Autonomous Mobile Agent CLI."""
+    """ARTEMIS 自主移动端智能体命令行系统。"""
     pass
 
 

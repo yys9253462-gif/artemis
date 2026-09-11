@@ -1097,56 +1097,19 @@ async def mobile_diagnose(
     verify_credentials: bool = False,
     probe_device: bool = False,
 ) -> dict[str, Any]:
-    """Diagnoses why ARTEMIS cannot run tasks from this IDE and returns the fixes.
+    """诊断 ARTEMIS 运行环境与设备连接状态并提供修复指引。
 
-    Call this FIRST whenever another ARTEMIS tool errors, a task fails to
-    start, no device is found, or the user says ARTEMIS "does not work".
-    It checks, in fix order: Python runtime, config file, the MCP host
-    (interpreter vs project venv, .env location, traces directory, daemon
-    port), LLM credentials, ADB + devices (authorization, lock screen, RSA
-    keys, emulators), and the optional video toolchain. A plain call takes a
-    few seconds; the optional extras cost more (see Args).
+    当其他 ARTEMIS 工具报错、任务无法启动、未检测到设备或无法正常控制手机时，请优先调用此诊断工具。
+    它会按修复优先级检查：Python 运行环境、配置文件、MCP 宿主环境、大模型凭证、ADB 守护进程与 Android 实体机/模拟器连接状态。
 
-    Returns a dict:
-      - `verdict`: "ready" | "degraded" (optional pieces missing) | "blocked".
-      - `summary`: one line with the pass count and what needs attention.
-      - `next_steps`: ordered instructions. `[REQUIRED]`/`[OPTIONAL]` lines
-        name a problem; the indented lines under them are the fix. `Run:`
-        lines are single, local, non-destructive shell commands you may
-        execute yourself, one per line (ask before installing software).
-        `Guidance:` lines need the user, explain a setting, or tell you
-        which mobile_diagnose call to make next. Follow them top to bottom,
-        then call this tool again until `verdict` is "ready".
-      - `checks`: per-check status. Passing checks are one line (id, title,
-        status, required, summary); failing ones add detail, fix, facts.
-        Secrets are never included.
-      - `host`: how the MCP server was launched: server_python,
-        runner_python, interpreter_matches_venv, env_file, env_file_exists,
-        traces_dir, mcp_client (when known), daemon {port, reachable,
-        port_held_by_other_process, log_path}.
-      - `device`: the device a task would use ({serial, state, model,
-        android_version, is_locked, is_emulator, accessibility_helper}) or
-        null. `accessibility_helper` describes the Artemis UI-hierarchy
-        helper APK on that device ({installed, installed_version,
-        bundled_version, outdated, enabled, forward_port, reachable,
-        backend}); with backend "auto" a missing helper only degrades
-        (UIAutomator2 fallback), with backend "helper" it blocks.
-      - `emulator`: background emulator launch state ({avd_name, status,
-        stage_message, error, serial, elapsed_seconds, progress_percent}) or
-        null when nothing was launched. `status` is starting /
-        waiting_for_adb / booting while it boots, then ready or failed.
-      - `tasks`: {"active": [...], "queued": [...]} ARTEMIS tasks holding or
-        waiting for a device (device, session_id, pid, description, ingress,
-        started_at/created_at). Stop a stuck one with
-        mobile_manage_task(action="stop", trace_id=<session_id>).
-      - `credentials`: null unless verify_credentials; else
-        [{provider, label, valid, message}] per configured key.
-      - `device_probe`: null unless probe_device; else {ok, serial,
-        elapsed_seconds, screenshot_bytes, element_count, error, fix}.
-      - `fixes_applied`: what `attempt_fix` did ({fix, success, skipped, message}).
-      - `logs`: paths to the MCP server logs and the daemon log, recent
-        error lines, and the most recent failed task with its error, log
-        paths and `recent_errors` (tail of its stderr log).
+    返回结果包含：
+      - `verdict`: "ready" (就绪) | "degraded" (降级可用，缺少可选组件) | "blocked" (存在阻断性问题需修复)。
+      - `summary`: 诊断简要结论与需要关注的问题。
+      - `next_steps`: 按照修复顺序排列的指导步骤，包含推荐执行的修复命令 (Run:) 与操作指引 (Guidance:)。
+      - `device`: 当前连接的 Android 设备详情（序列号、型号、Android版本、锁屏状态、无障碍服务状态等）。
+      - `tasks`: 当前持有设备或正在排队的任务列表。
+      - `fixes_applied`: 在开启 `attempt_fix=True` 时自动执行的修复动作与结果。
+    """
 
     Args:
         attempt_fix: When true, applies the safe self-heals the ARTEMIS
