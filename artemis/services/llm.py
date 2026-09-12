@@ -596,9 +596,78 @@ class RobustChatModelWrapper:
         )
 
     def with_structured_output(self, *args, **kwargs):
+        from langchain_core.runnables import RunnableLambda
+        from pydantic import BaseModel
+        from artemis.llm.structured import parse_structured
+
+        schema = args[0] if args else kwargs.get("schema")
+
+        # Create robust universal structured runner that handles both Function Calling (tools)
+        # and Markdown fenced JSON (```json ... ```) returned by third-party OpenAI relays
+        if schema is not None and isinstance(schema, type) and issubclass(schema, BaseModel):
+            tool_name = schema.__name__
+            bound = self.base_model.bind_tools(
+                [schema],
+                tool_choice={"type": "function", "function": {"name": tool_name}}
+            )
+
+            async def _ainvoke(input_data, config=None):
+                res = await bound.ainvoke(input_data, config=config)
+                # 1. First check if model invoked tool call
+                if hasattr(res, "tool_calls") and res.tool_calls:
+                    for tc in res.tool_calls:
+                        if tc.get("name") == tool_name:
+                            return schema.model_validate(tc.get("args", {}))
+                    return schema.model_validate(res.tool_calls[0].get("args", {}))
+                
+                # 2. Check function_call in additional_kwargs
+                add_kwargs = getattr(res, "additional_kwargs", {})
+                if add_kwargs and add_kwargs.get("function_call"):
+                    fc_args = add_kwargs["function_call"].get("arguments", "{}")
+                    if isinstance(fc_args, str):
+                        fc_dict = parse_structured(fc_args, schema)
+                        if isinstance(fc_dict, schema):
+                            return fc_dict
+                    elif isinstance(fc_args, dict):
+                        return schema.model_validate(fc_args)
+
+                # 3. Fallback: Parse markdown fenced JSON from content
+                raw = res.content if hasattr(res, "content") else str(res)
+                parsed = parse_structured(raw, schema)
+                if isinstance(parsed, schema):
+                    return parsed
+                raise ValueError(f"Failed to parse structured output for {tool_name} from: {raw}")
+
+            def _invoke(input_data, config=None):
+                res = bound.invoke(input_data, config=config)
+                if hasattr(res, "tool_calls") and res.tool_calls:
+                    for tc in res.tool_calls:
+                        if tc.get("name") == tool_name:
+                            return schema.model_validate(tc.get("args", {}))
+                    return schema.model_validate(res.tool_calls[0].get("args", {}))
+                add_kwargs = getattr(res, "additional_kwargs", {})
+                if add_kwargs and add_kwargs.get("function_call"):
+                    fc_args = add_kwargs["function_call"].get("arguments", "{}")
+                    if isinstance(fc_args, str):
+                        fc_dict = parse_structured(fc_args, schema)
+                        if isinstance(fc_dict, schema):
+                            return fc_dict
+                    elif isinstance(fc_args, dict):
+                        return schema.model_validate(fc_args)
+                raw = res.content if hasattr(res, "content") else str(res)
+                parsed = parse_structured(raw, schema)
+                if isinstance(parsed, schema):
+                    return parsed
+                raise ValueError(f"Failed to parse structured output for {tool_name} from: {raw}")
+
+            runnable = RunnableLambda(_invoke, afunc=_ainvoke)
+            return RobustChatModelWrapper(
+                runnable,
+                self.ctx,
+                endpoint=self.endpoint,
+            )
+
         if hasattr(self.base_model, "with_structured_output"):
-            # If method is not explicitly specified for OpenAI-compatible providers,
-            # enforce method="function_calling" to avoid empty json_mode response errors on relays
             if "method" not in kwargs:
                 kwargs["method"] = "function_calling"
             return RobustChatModelWrapper(

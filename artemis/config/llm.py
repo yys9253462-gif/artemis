@@ -116,16 +116,33 @@ class LLMWithFallback(LLM):
         return f"{self.provider}/{self.model} (fallback: {self.fallback})"
 
 
-def lightweight_judge_default() -> "LLMWithFallback":
+def lightweight_judge_default(default_cfg: dict | None = None) -> "LLMWithFallback":
     """Factory default for the lightweight judge nodes (pixel safety net and
-    planner validation): a flash-lite model at temperature 0."""
+    planner validation). If a custom default provider is configured (e.g. OpenAI relay),
+    inherit that provider instead of hardcoding Google."""
+    if default_cfg and default_cfg.get("provider"):
+        provider = default_cfg.get("provider", "openai")
+        model = default_cfg.get("model", "gemini-3.8-flash-high")
+        fb_dict = default_cfg.get("fallback", {})
+        fb_provider = fb_dict.get("provider", provider)
+        fb_model = fb_dict.get("model", "gemini-3.1-pro-high")
+        return LLMWithFallback(
+            provider=provider,
+            model=model,
+            temperature=0.0,
+            fallback=LLM(
+                provider=fb_provider,
+                model=fb_model,
+                temperature=0.0,
+            ),
+        )
     return LLMWithFallback(
-        provider="google",
-        model="gemini-3.5-flash-lite",
+        provider="openai" if settings.OPENAI_API_KEY else "google",
+        model="gemini-3.8-flash-high" if settings.OPENAI_API_KEY else "gemini-3.5-flash-lite",
         temperature=0.0,
         fallback=LLM(
-            provider="google",
-            model="gemini-3.1-flash-lite",
+            provider="openai" if settings.OPENAI_API_KEY else "google",
+            model="gemini-3.1-pro-high" if settings.OPENAI_API_KEY else "gemini-3.1-flash-lite",
             temperature=0.0,
         ),
     )
