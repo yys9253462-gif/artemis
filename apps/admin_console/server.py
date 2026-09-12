@@ -82,7 +82,9 @@ try:
     from admin_console.services.ipc_service import ipc_service
     from admin_console.services.media_service import media_service
     from admin_console.services.model_service import model_service
+    from admin_console.services.scheduler_service import scheduler_service
     from admin_console.services.task_queue_service import task_queue_service
+    from admin_console.services.wifi_adb_service import wifi_adb_service
 except ImportError:
     from apps.admin_console.core.security import SameOriginBoundaryMiddleware
     from apps.admin_console.core.state import state

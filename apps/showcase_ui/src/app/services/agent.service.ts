@@ -16,7 +16,7 @@
 
 import { Injectable, signal, inject, computed, DestroyRef, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, timeout } from 'rxjs';
 
 import { Session, ModelInfo, TaskQueueItem, AgentStatusResponse, SessionUsage } from '../core/models/session.model';
 import { ProTuningDefaults, ProTuningOptions } from '../core/models/pro-tuning.model';
@@ -450,8 +450,21 @@ export class AgentService {
         payload.explorer_mode = proTuning.explorerMode;
       }
       this.clearUserPinnedSession();
-      this.http.post<any>('/api/run', payload).subscribe({
+      const request = this.http.post<any>('/api/run', payload).pipe(
+        // A wedged ADB/readiness probe must not leave every launcher stuck in
+        // an irreversible submitting state. Backend admission is intentionally
+        // bounded, so a response taking longer than this is a failed request.
+        timeout({ first: 30_000 })
+      ).subscribe({
         next: (res) => {
+          if (res?.status === 'rejected') {
+            this.pendingStartupProgress.set([]);
+            obs.error({
+              status: 409,
+              error: { detail: res.error || 'The selected device is not available.' }
+            });
+            return;
+          }
           if (res && res.tasks && res.tasks.length > 0) {
             const newSessionId = res.tasks[0].session_id;
             if (newSessionId) {
@@ -482,6 +495,7 @@ export class AgentService {
           obs.error(err);
         }
       });
+      return () => request.unsubscribe();
     });
   }
 

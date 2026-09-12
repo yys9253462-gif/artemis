@@ -99,8 +99,29 @@ class WifiAdbService:
             "output": output
         }
 
+    def sniff_host_ports_fast(self, host_ip: str) -> list[int]:
+        """High-concurrency (300 workers) socket sniffer to find active wireless debugging port in ~1.2s."""
+        import socket
+        import concurrent.futures
+
+        open_ports = []
+        def check_port(p: int):
+            try:
+                s = socket.socket()
+                s.settimeout(0.04)
+                if s.connect_ex((host_ip, p)) == 0:
+                    open_ports.append(p)
+                s.close()
+            except Exception:
+                pass
+
+        # Android 11+ wireless debugging uses random dynamic ports in 35000-44000
+        with concurrent.futures.ThreadPoolExecutor(max_workers=300) as ex:
+            ex.map(check_port, range(35000, 44000))
+        return sorted(open_ports)
+
     async def pair_device(self, address: str, pairing_code: str, connect_port: str | None = None) -> dict[str, Any]:
-        """Pair an Android 11+ wireless debugging device using IP:Port and Pairing Code, then auto-connect."""
+        """Pair an Android 11+ wireless debugging device using IP:Port and Pairing Code, then auto-connect with ultra-fast port sniffing."""
         address = address.strip()
         pairing_code = pairing_code.strip()
         if not address or not pairing_code:
@@ -112,33 +133,61 @@ class WifiAdbService:
 
         connect_msg = ""
         connect_success = False
+        connected_endpoint = None
 
         if success:
-            # If user provided connection port (or default to pair port or 5555)
             host_ip = address.split(":")[0]
-            target_connect_endpoint = f"{host_ip}:{connect_port}" if connect_port else (f"{host_ip}:5555")
-            
-            # If connect_port wasn't explicit, check mDNS first for the newly paired device connect port
-            if not connect_port:
-                await asyncio.sleep(1.0)
+            pair_port_str = address.split(":")[1] if ":" in address else ""
+
+            # Strategy 1: User explicitly provided connect_port
+            if connect_port:
+                candidate_endpoints = [f"{host_ip}:{connect_port}"]
+            else:
+                # Strategy 2: Ultra-fast (1s) multi-thread socket sniffer on host_ip
+                await asyncio.sleep(0.5)
+                open_ports = await asyncio.to_thread(self.sniff_host_ports_fast, host_ip)
+                # Exclude the temporary pairing port itself
+                comm_ports = [p for p in open_ports if str(p) != pair_port_str]
+                
+                # If sniffer found candidate ports, try them first; then fallback to mDNS or 5555
+                candidate_endpoints = [f"{host_ip}:{p}" for p in comm_ports]
+                
+                # Check mDNS as auxiliary
                 mdns_list = await self.scan_mdns_services()
                 for item in mdns_list:
                     ep = item.get("endpoint", "")
-                    if ep.startswith(host_ip + ":"):
-                        target_connect_endpoint = ep
-                        break
+                    if ep.startswith(host_ip + ":") and ep not in candidate_endpoints and ep != address:
+                        candidate_endpoints.append(ep)
 
-            # Automatically connect to target endpoint
-            conn_res = await self.connect_device(target_connect_endpoint)
-            connect_success = conn_res.get("success", False)
-            connect_msg = conn_res.get("output", "")
+                # Fallback to standard 5555
+                if f"{host_ip}:5555" not in candidate_endpoints:
+                    candidate_endpoints.append(f"{host_ip}:5555")
+
+            logger.info(f"[WifiAdb] Attempting auto-connection to candidate endpoints: {candidate_endpoints}")
+
+            # Try connecting until one succeeds
+            for target_ep in candidate_endpoints:
+                conn_res = await self.connect_device(target_ep)
+                if conn_res.get("success", False):
+                    connect_success = True
+                    connect_msg = conn_res.get("output", "")
+                    connected_endpoint = target_ep
+                    logger.info(f"[WifiAdb] Successfully auto-connected to {target_ep} after pairing!")
+                    break
+
+            # Disconnect any accidental offline connection to the temporary pairing port
+            try:
+                await self.run_adb_cmd("disconnect", address)
+            except Exception:
+                pass
 
         return {
             "success": success,
             "address": address,
             "output": output,
             "connect_success": connect_success,
-            "connect_message": connect_msg
+            "connect_message": connect_msg,
+            "connected_endpoint": connected_endpoint
         }
 
     async def scan_mdns_services(self) -> list[dict[str, Any]]:

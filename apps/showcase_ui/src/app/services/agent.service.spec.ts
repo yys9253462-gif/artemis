@@ -9,6 +9,7 @@ describe('AgentService live LLM retry timeline', () => {
     service.sessionLogs = signal<any[]>([]);
     service.isSessionContentLoading = signal(false);
     service.startupProgressBySession = signal({});
+    service.selectedDeviceSerial = signal<string | null>(null);
     (service as any).pendingStartupProgress = signal<any[]>([]);
     (service as any).sessionLoadGeneration = 0;
     (service as any).sessionSnapshotRequestId = 0;
@@ -178,6 +179,30 @@ describe('AgentService live LLM retry timeline', () => {
     service.runTask('test goal').subscribe();
 
     expect(selectSpy).toHaveBeenCalledWith('new-session', false);
+  });
+
+  it('surfaces an explicitly rejected device submission as an error', () => {
+    const service = createServiceWithoutPolling();
+    (service as any).http = {
+      post: () => of({
+        status: 'rejected',
+        error: 'Selected device is locked.',
+        tasks: []
+      })
+    };
+    service.agentStatus = signal('idle');
+    service.runningSessionId = signal<string | null>(null);
+    service.userPinnedSessionId = signal<string | null>(null);
+    service.selectedDeviceSerial = signal<string | null>('device-locked');
+    (service as any).sessions = signal<any[]>([]);
+
+    let receivedError: any;
+    service.runTask('test goal').subscribe({
+      error: (error) => receivedError = error
+    });
+
+    expect(receivedError.status).toBe(409);
+    expect(receivedError.error.detail).toBe('Selected device is locked.');
   });
 
   it('keeps the paused state when the backend says there is nothing to resume', () => {

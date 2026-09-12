@@ -329,6 +329,29 @@ async def test_submission_probe_falls_back_to_unlocked_device(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_submission_probe_does_not_fall_back_from_explicit_device(monkeypatch):
+    """A device-bound page must validate that exact device, not a healthy sibling."""
+    probe = AdbDeviceProbe()
+    monkeypatch.setattr(
+        probe,
+        "_get_device_states",
+        AsyncMock(return_value=[("device-locked", "device"), ("device-unlocked", "device")]),
+    )
+
+    async def mock_lock_state(adb_path, serial, timeout_seconds=1.0):
+        return True if serial == "device-locked" else False
+
+    monkeypatch.setattr(probe, "_get_confirmed_device_lock_state", mock_lock_state)
+
+    result = await probe.probe_submission_readiness(target_serial="device-locked")
+
+    assert result.status == ProbeStatus.WARN
+    assert result.summary == "Device Locked"
+    assert result.metadata["active_device"]["serial"] == "device-locked"
+    assert result.metadata["active_device"]["is_locked"] is True
+
+
+@pytest.mark.asyncio
 async def test_adb_probe_prefers_unlocked_device_when_one_is_locked(monkeypatch):
     """When multiple ready devices exist, probe() should pick the unlocked one as active."""
     from artemis.core.diagnostics.schema import DeviceInfo

@@ -214,7 +214,7 @@ export class ChatInterfaceComponent {
       return;
     }
     this.isPairing.set(true);
-    this.pairResultMessage.set('正在配对并自动连接手机中，请稍候...');
+    this.pairResultMessage.set('正在配对中，配对成功后将自动极速嗅探通信端口并秒级连通...');
 
     fetch('/api/wifi-adb/pair', {
       method: 'POST',
@@ -225,7 +225,8 @@ export class ChatInterfaceComponent {
       .then(data => {
         this.isPairing.set(false);
         if (data.success) {
-          this.pairResultMessage.set('🎉 配对成功！已自动建立无线调试连接！');
+          const targetText = data.connected_endpoint ? ` (${data.connected_endpoint})` : '';
+          this.pairResultMessage.set(`🎉 配对成功！已自动完成无线调试连接${targetText}！`);
           setTimeout(() => {
             this.isPairModalOpen.set(false);
             this.pairAddress = '';

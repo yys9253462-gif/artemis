@@ -423,8 +423,11 @@ class AdbDeviceProbe(BaseProbe):
             timeout_seconds=1.0,
         )
 
-        # If preferred device is locked or unknown, check remaining ready devices for an unlocked one
-        if is_locked is not False and len(ready_serials) > 1:
+        # Auto-selected submissions may fall back to another unlocked device.
+        # An explicitly targeted submission must remain strict: reporting a
+        # different device as ready would let the caller enqueue work against
+        # the original locked serial while believing its readiness check passed.
+        if target_serial is None and is_locked is not False and len(ready_serials) > 1:
             for candidate in ready_serials:
                 if candidate == preferred:
                     continue

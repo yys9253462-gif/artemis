@@ -907,7 +907,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     this.isPairingWifi.set(true);
     this.wifiConnectError.set(null);
-    this.wifiConnectMessage.set('正在配对并自动连接手机，请稍候...');
+    this.wifiConnectMessage.set('正在配对中，配对成功后将自动极速嗅探通信端口并秒级连通...');
 
     fetch('/api/wifi-adb/pair', {
       method: 'POST',
@@ -922,9 +922,10 @@ export class HomeComponent implements OnInit, OnDestroy {
       .then(data => {
         this.isPairingWifi.set(false);
         if (data.success) {
-          this.wifiConnectMessage.set('🎉 配对成功！已自动完成无线调试连接！');
+          const targetText = data.connected_endpoint ? ` (已连通: ${data.connected_endpoint})` : '';
+          this.wifiConnectMessage.set(`🎉 配对成功！已自动完成无线调试连接${targetText}！`);
           this.systemService.fetchReadiness(true, true).subscribe();
-          setTimeout(() => this.wifiConnectMessage.set(null), 5000);
+          setTimeout(() => this.wifiConnectMessage.set(null), 6000);
         } else {
           this.wifiConnectError.set('配对失败: ' + (data.output || '请检查配对码是否过期或端口是否正确'));
         }
