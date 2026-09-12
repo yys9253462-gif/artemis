@@ -32,10 +32,10 @@ router = APIRouter(tags=["stream"])
 
 
 @router.get("/api/stream/device-live")
-async def stream_device_live():
-    """Streams live device screen frames as multipart MJPEG."""
+async def stream_device_live(device: str | None = None):
+    """Streams live device screen frames as multipart MJPEG for a specified or default device."""
     return StreamingResponse(
-        device_stream_service.mjpeg_frame_generator(),
+        device_stream_service.mjpeg_frame_generator(serial=device),
         media_type="multipart/x-mixed-replace; boundary=frame",
         headers={
             "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
@@ -44,6 +44,25 @@ async def stream_device_live():
             "Connection": "keep-alive",
         },
     )
+
+
+@router.get("/api/stream/devices-state")
+async def get_all_devices_stream_state():
+    """Returns all connected devices and their corresponding live stream endpoints."""
+    serials = await device_stream_service.get_connected_devices()
+    devices_info = [
+        {
+            "serial": s,
+            "connected": True,
+            "live_stream_url": f"/api/stream/device-live?device={s}",
+        }
+        for s in serials
+    ]
+    return JSONResponse({
+        "total": len(serials),
+        "devices": devices_info,
+        "primary_serial": serials[0] if serials else None
+    })
 
 
 @router.get("/api/stream/device-state")
@@ -61,25 +80,36 @@ async def get_device_stream_state():
 
 @router.post("/api/stream/touch")
 async def inject_device_touch(request: Request):
-    """Inject interactive user touch inputs (tap, swipe, keyevent, text) to real phone."""
+    """Inject interactive user touch inputs (tap, swipe, keyevent, text) to real phone(s).
+    Supports target device serial or sync=True for dual/multi-device synchronized touch!
+    """
     payload = await request.json()
     action = payload.get("action", "tap")
-    success = await device_stream_service.inject_touch_event(action, payload)
-    return JSONResponse({"success": success, "action": action})
+    target_device = payload.get("device")
+    success = await device_stream_service.inject_touch_event(action, payload, target_serial=target_device)
+    return JSONResponse({"success": success, "action": action, "device": target_device})
 
 
 @router.post("/api/stream/launch-scrcpy")
-async def launch_native_scrcpy():
+async def launch_native_scrcpy(request: Request):
     """Launch hardware-accelerated, ultra-low latency (<30ms) 60fps Scrcpy desktop window with companion hardware dock bar."""
     from artemis.toolchain import find_scrcpy
     from apps.admin_console.services.scrcpy_dock import launch_companion_dock
+
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    target_serial = body.get("device") or await device_stream_service.get_device_serial()
     scrcpy_bin = find_scrcpy()
-    serial = await device_stream_service.get_device_serial()
     cmd = [scrcpy_bin]
-    if serial:
-        cmd.extend(["-s", serial])
+    if target_serial:
+        cmd.extend(["-s", target_serial])
+    
+    title_serial = f" - {target_serial}" if target_serial else ""
     cmd.extend([
-        "--window-title=Artemis 极速真机操控 (60fps 零延迟)",
+        f"--window-title=Artemis 极速真机操控 (60fps 零延迟){title_serial}",
         "-m", "1080",
         "--max-fps", "60",
         "--stay-awake",
@@ -93,8 +123,8 @@ async def launch_native_scrcpy():
             stderr=asyncio.subprocess.DEVNULL
         )
         # Launch the companion physical dock bar attached right below the scrcpy window
-        launch_companion_dock(serial=serial, window_keyword="Artemis")
-        return JSONResponse({"success": True, "pid": proc.pid, "message": "Scrcpy 极速窗口与实体导航控制栏已开启"})
+        launch_companion_dock(serial=target_serial, window_keyword="Artemis")
+        return JSONResponse({"success": True, "pid": proc.pid, "device": target_serial, "message": "Scrcpy 极速窗口与实体导航控制栏已开启"})
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)})
 
@@ -121,11 +151,12 @@ async def connect_wifi_adb(request: Request):
 
 @router.post("/api/wifi-adb/pair")
 async def pair_wifi_adb(request: Request):
-    """Pair an Android 11+ wireless debugging phone."""
+    """Pair an Android 11+ wireless debugging phone and auto-connect."""
     body = await request.json()
     address = body.get("address", "")
     code = body.get("code", "")
-    res = await wifi_adb_service.pair_device(address, code)
+    connect_port = body.get("connect_port")
+    res = await wifi_adb_service.pair_device(address, code, connect_port=connect_port)
     return JSONResponse(res)
 
 

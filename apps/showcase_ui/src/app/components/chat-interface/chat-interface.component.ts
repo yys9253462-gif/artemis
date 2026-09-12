@@ -73,76 +73,124 @@ export class ChatInterfaceComponent {
     });
   });
 
-  public isMouseDownOnScreen = false;
-  private touchStartX = 0;
-  private touchStartY = 0;
-  private touchStartTime = 0;
-  public phoneTextInput = '';
+  // -------------------------------------------------------------------------
+  // 📱 Dual-Device Stream & Control State
+  // -------------------------------------------------------------------------
+  public connectedDevices = signal<string[]>([]);
+  public isDualPhoneMode = signal<boolean>(true);
+  public isSyncControlMode = signal<boolean>(false);
+  public isPairModalOpen = signal<boolean>(false);
 
-  public onScreenMouseDown(event: MouseEvent, target: HTMLElement): void {
-    this.isMouseDownOnScreen = true;
-    const rect = target.getBoundingClientRect();
-    this.touchStartX = (event.clientX - rect.left) / rect.width;
-    this.touchStartY = (event.clientY - rect.top) / rect.height;
-    this.touchStartTime = Date.now();
+  // Wireless Pairing Form
+  public pairAddress = '';
+  public pairCode = '';
+  public pairConnectPort = '';
+  public isPairing = signal<boolean>(false);
+  public pairResultMessage = signal<string | null>(null);
+
+  public phoneTextInputMap: Record<string, string> = {};
+  public isMouseDownOnScreenMap: Record<string, boolean> = {};
+  private touchStartPosMap: Record<string, { x: number; y: number; t: number }> = {};
+
+  public loadDevicesState(): void {
+    fetch('/api/stream/devices-state')
+      .then(res => res.json())
+      .then(data => {
+        const serials = (data.devices || []).map((d: any) => d.serial);
+        this.connectedDevices.set(serials);
+      })
+      .catch(err => console.error('Load devices state error:', err));
   }
 
-  public onScreenMouseUp(event: MouseEvent, target: HTMLElement): void {
-    if (!this.isMouseDownOnScreen) return;
-    this.isMouseDownOnScreen = false;
+  public getLiveStreamUrl(serial: string): string {
+    return `/api/stream/device-live?device=${encodeURIComponent(serial)}`;
+  }
+
+  public onScreenMouseDownDevice(event: MouseEvent, target: HTMLElement, serial: string): void {
+    this.isMouseDownOnScreenMap[serial] = true;
+    const rect = target.getBoundingClientRect();
+    this.touchStartPosMap[serial] = {
+      x: (event.clientX - rect.left) / rect.width,
+      y: (event.clientY - rect.top) / rect.height,
+      t: Date.now()
+    };
+  }
+
+  public onScreenMouseUpDevice(event: MouseEvent, target: HTMLElement, serial: string): void {
+    if (!this.isMouseDownOnScreenMap[serial]) return;
+    this.isMouseDownOnScreenMap[serial] = false;
+    const start = this.touchStartPosMap[serial] || { x: 0.5, y: 0.5, t: Date.now() };
     const rect = target.getBoundingClientRect();
     const endX = (event.clientX - rect.left) / rect.width;
     const endY = (event.clientY - rect.top) / rect.height;
-    const duration = Date.now() - this.touchStartTime;
+    const duration = Date.now() - start.t;
 
-    const dx = Math.abs(endX - this.touchStartX);
-    const dy = Math.abs(endY - this.touchStartY);
+    const dx = Math.abs(endX - start.x);
+    const dy = Math.abs(endY - start.y);
 
     if (dx < 0.03 && dy < 0.03) {
-      this.sendTouch('tap', {
-        x: Math.round(this.touchStartX * 1000),
-        y: Math.round(this.touchStartY * 1000)
-      });
+      this.sendTouchToDevice('tap', {
+        x: Math.round(start.x * 1000),
+        y: Math.round(start.y * 1000)
+      }, serial);
     } else {
-      this.sendTouch('swipe', {
-        x1: Math.round(this.touchStartX * 1000),
-        y1: Math.round(this.touchStartY * 1000),
+      this.sendTouchToDevice('swipe', {
+        x1: Math.round(start.x * 1000),
+        y1: Math.round(start.y * 1000),
         x2: Math.round(endX * 1000),
         y2: Math.round(endY * 1000),
         duration: Math.max(200, duration)
-      });
+      }, serial);
     }
   }
 
-  public sendTouch(action: string, payload: any): void {
+  public sendTouchToDevice(action: string, payload: any, serial?: string): void {
+    const isSync = this.isSyncControlMode();
+    const body: any = {
+      action,
+      ...payload,
+      sync: isSync
+    };
+    if (!isSync && serial) {
+      body.device = serial;
+    }
     fetch('/api/stream/touch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, ...payload })
+      body: JSON.stringify(body)
     }).catch(err => console.error('Touch send error:', err));
   }
 
-  public sendKey(keycode: string): void {
-    this.sendTouch('keyevent', { keycode });
+  public sendKeyDevice(keycode: string, serial?: string): void {
+    this.sendTouchToDevice('keyevent', { keycode }, serial);
   }
 
-  public sendSwipe(dir: 'up' | 'down'): void {
+  public sendSwipeDevice(dir: 'up' | 'down', serial?: string): void {
     if (dir === 'up') {
-      this.sendTouch('swipe', { x1: 500, y1: 800, x2: 500, y2: 200, duration: 300 });
+      this.sendTouchToDevice('swipe', { x1: 500, y1: 800, x2: 500, y2: 200, duration: 300 }, serial);
     } else {
-      this.sendTouch('swipe', { x1: 500, y1: 200, x2: 500, y2: 800, duration: 300 });
+      this.sendTouchToDevice('swipe', { x1: 500, y1: 200, x2: 500, y2: 800, duration: 300 }, serial);
     }
   }
 
-  public sendText(): void {
-    const text = this.phoneTextInput.trim();
-    if (!text) return;
-    this.sendTouch('text', { text });
-    this.phoneTextInput = '';
+  public sendTextDevice(serial?: string): void {
+    const text = (serial ? this.phoneTextInputMap[serial] : this.phoneTextInput) || '';
+    const clean = text.trim();
+    if (!clean) return;
+    this.sendTouchToDevice('text', { text: clean }, serial);
+    if (serial) {
+      this.phoneTextInputMap[serial] = '';
+    } else {
+      this.phoneTextInput = '';
+    }
   }
 
-  public launchNativeScrcpy(): void {
-    fetch('/api/stream/launch-scrcpy', { method: 'POST' })
+  public launchScrcpyDevice(serial?: string): void {
+    fetch('/api/stream/launch-scrcpy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ device: serial })
+    })
       .then(res => res.json())
       .then(data => {
         if (!data.success) {
@@ -150,6 +198,83 @@ export class ChatInterfaceComponent {
         }
       })
       .catch(err => alert('网络异常: ' + err.message));
+  }
+
+  // Wireless Pairing Action
+  public executePairing(): void {
+    const addr = this.pairAddress.trim();
+    const code = this.pairCode.trim();
+    const port = this.pairConnectPort.trim() || undefined;
+    if (!addr || !code) {
+      this.pairResultMessage.set('请输入配对 IP:端口 以及 6 位配对码！');
+      return;
+    }
+    this.isPairing.set(true);
+    this.pairResultMessage.set('正在配对并自动连接手机中，请稍候...');
+
+    fetch('/api/wifi-adb/pair', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: addr, code: code, connect_port: port })
+    })
+      .then(res => res.json())
+      .then(data => {
+        this.isPairing.set(false);
+        if (data.success) {
+          this.pairResultMessage.set('🎉 配对成功！已自动建立无线调试连接！');
+          setTimeout(() => {
+            this.isPairModalOpen.set(false);
+            this.pairAddress = '';
+            this.pairCode = '';
+            this.pairConnectPort = '';
+            this.pairResultMessage.set(null);
+            this.loadDevicesState();
+          }, 1500);
+        } else {
+          this.pairResultMessage.set('❌ 配对失败: ' + (data.output || '请检查配对码是否过期或端口是否正确'));
+        }
+      })
+      .catch(err => {
+        this.isPairing.set(false);
+        this.pairResultMessage.set('❌ 网络异常: ' + err.message);
+      });
+  }
+
+  // Legacy single-device aliases
+  public isMouseDownOnScreen = false;
+  private touchStartX = 0;
+  private touchStartY = 0;
+  private touchStartTime = 0;
+  public phoneTextInput = '';
+
+  public onScreenMouseDown(event: MouseEvent, target: HTMLElement): void {
+    const first = this.connectedDevices()[0] || '';
+    this.onScreenMouseDownDevice(event, target, first);
+  }
+
+  public onScreenMouseUp(event: MouseEvent, target: HTMLElement): void {
+    const first = this.connectedDevices()[0] || '';
+    this.onScreenMouseUpDevice(event, target, first);
+  }
+
+  public sendTouch(action: string, payload: any): void {
+    this.sendTouchToDevice(action, payload);
+  }
+
+  public sendKey(keycode: string): void {
+    this.sendKeyDevice(keycode);
+  }
+
+  public sendSwipe(dir: 'up' | 'down'): void {
+    this.sendSwipeDevice(dir);
+  }
+
+  public sendText(): void {
+    this.sendTextDevice();
+  }
+
+  public launchNativeScrcpy(): void {
+    this.launchScrcpyDevice();
   }
 
   // ⏰ Scheduler State for Workspace

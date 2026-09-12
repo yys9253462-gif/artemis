@@ -40,9 +40,9 @@ export class WorkspaceComponent implements OnInit {
   private zone = inject(NgZone);
   private destroyRef = inject(DestroyRef);
 
-  // Default right panel width to 1/3 of the screen (or 450px as fallback)
+  // Default right panel width to half or comfortable dual-phone layout (min 580px)
   public rightPanelWidth = signal<number>(
-    typeof window !== 'undefined' ? Math.round(window.innerWidth / 3) : 450
+    typeof window !== 'undefined' ? Math.max(580, Math.round(window.innerWidth * 0.42)) : 580
   );
   public isDragging = signal<boolean>(false);
   private dragWidthRafId: number | null = null;

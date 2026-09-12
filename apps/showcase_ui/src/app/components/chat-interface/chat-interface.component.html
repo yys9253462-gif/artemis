@@ -30,10 +30,10 @@ limitations under the License.
       <button
         class="tab-selector-btn"
         [class.active]="agentService.activeTab() === 'screen'"
-        (click)="agentService.activeTab.set('screen')"
+        (click)="agentService.activeTab.set('screen'); loadDevicesState()"
         >
         <span class="material-symbols-outlined tab-icon">screenshot_monitor</span>
-        <span class="tab-text">实时投屏</span>
+        <span class="tab-text">双机实时投屏</span>
       </button>
       <button
         class="tab-selector-btn"
@@ -392,78 +392,160 @@ limitations under the License.
       </div>
     }
 
-    <!-- 📱 Real-time Screen & Touch Tab Content -->
+    <!-- 📱 Real-time Screen & Dual-Device Control Tab Content -->
     @if (agentService.activeTab() === 'screen') {
-      <div class="live-screen-tab-panel" style="display: flex; flex-direction: column; align-items: center; padding: 15px; height: 100%; box-sizing: border-box; overflow-y: auto;">
-        <!-- Header Toolbar -->
-        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <div style="font-size: 0.8rem; color: #10b981; display: flex; align-items: center; gap: 6px;">
-            <span class="material-symbols-outlined" style="font-size: 16px;">sensors</span>
-            <span>实时投屏流已连接</span>
+      <div class="live-screen-tab-panel" style="display: flex; flex-direction: column; padding: 12px; height: 100%; box-sizing: border-box; overflow-y: auto;">
+        <!-- Dual Device Top Control Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: 700; font-size: 13px; color: #0f172a;">📱 在线手机 ({{ connectedDevices().length }})</span>
+            <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #dcfce7; color: #15803d; font-weight: 600;">
+              {{ connectedDevices().length >= 2 ? '双机已就绪' : (connectedDevices().length === 1 ? '单机在线' : '无设备') }}
+            </span>
           </div>
-          <button 
-            type="button" 
-            class="tab-selector-btn active" 
-            (click)="launchNativeScrcpy()" 
-            style="height: 24px; padding: 0 8px; font-size: 11px; background: #3b82f6; color: white;"
-            title="一键调起桌面硬件级极速 60fps Scrcpy 极速窗口（支持键盘全键盘输入与超低延迟）"
-          >
-            ⚡ 弹起 60fps 极速窗口
-          </button>
+
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <!-- Sync Control Toggle -->
+            <button 
+              type="button" 
+              class="tab-selector-btn" 
+              [class.active]="isSyncControlMode()"
+              (click)="isSyncControlMode.set(!isSyncControlMode())"
+              style="height: 26px; padding: 0 10px; font-size: 11px;"
+              [title]="isSyncControlMode() ? '点击关闭双机同步' : '点击开启双机同步镜像操控（一个操作两台手机同时动）'"
+            >
+              <span class="material-symbols-outlined" style="font-size: 14px;">sync_alt</span>
+              <span>{{ isSyncControlMode() ? '⚡ 同步镜像控制已开启' : '双机同步操作' }}</span>
+            </button>
+
+            <!-- Wireless Pair Button -->
+            <button 
+              type="button" 
+              class="tab-selector-btn" 
+              (click)="isPairModalOpen.set(true); pairResultMessage.set(null)"
+              style="height: 26px; padding: 0 10px; font-size: 11px; background: #6366f1; color: white;"
+              title="输入配对码绑定并接入第二台手机"
+            >
+              <span class="material-symbols-outlined" style="font-size: 14px;">phonelink_setup</span>
+              <span>配对新手机</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Phone Frame Wrapper -->
-        <div 
-          #phoneScreen
-          style="position: relative; width: 280px; height: 600px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 2px solid #334155; cursor: crosshair; user-select: none; flex-shrink: 0;"
-          (mousedown)="onScreenMouseDown($event, phoneScreen)"
-          (mouseup)="onScreenMouseUp($event, phoneScreen)"
-        >
-          <img 
-            src="/api/stream/device-live" 
-            style="width: 100%; height: 100%; object-fit: fill; display: block;" 
-            alt="Device Screen"
-          />
-        </div>
+        <!-- Wireless Pairing Modal Dialog -->
+        @if (isPairModalOpen()) {
+          <div style="background: #ffffff; border: 2px solid #6366f1; border-radius: 10px; padding: 14px; margin-bottom: 12px; box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-weight: 700; font-size: 13px; color: #1e1b4b;">📶 Android 11+ 无线调试配对码绑定</span>
+              <button type="button" class="btn-toast-close" (click)="isPairModalOpen.set(false)" style="background:none;border:none;cursor:pointer;">✕</button>
+            </div>
+            <p style="font-size: 11px; color: #64748b; margin: 0 0 10px 0; line-height: 1.4;">
+              手机开启【开发者选项】->【无线调试】->【使用配对码配对设备】，将弹出窗口中的 IP:端口 与 6 位配对码填入：
+            </p>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+              <input 
+                type="text" 
+                [(ngModel)]="pairAddress" 
+                placeholder="配对 IP与端口 (如 192.168.5.25:38421)" 
+                style="flex: 2; min-width: 180px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; outline: none;"
+              />
+              <input 
+                type="text" 
+                [(ngModel)]="pairCode" 
+                placeholder="6 位配对码" 
+                style="flex: 1; min-width: 90px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; outline: none;"
+              />
+              <button 
+                type="button" 
+                class="tab-selector-btn active" 
+                (click)="executePairing()" 
+                [disabled]="isPairing()"
+                style="height: 30px; padding: 0 14px; font-size: 12px; background: #6366f1; color: white;"
+              >
+                {{ isPairing() ? '绑定中...' : '立即绑定' }}
+              </button>
+            </div>
+            @if (pairResultMessage()) {
+              <div style="font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 6px; background: #f8fafc; color: #334155; margin-top: 6px;">
+                {{ pairResultMessage() }}
+              </div>
+            }
+          </div>
+        }
 
-        <!-- Keys Bar -->
-        <div style="display: flex; gap: 8px; margin-top: 12px; width: 100%; justify-content: center;">
-          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_BACK')" style="height: 28px; padding: 0 10px; font-size: 12px; background: #f1f5f9;" title="返回">◀ 返回</button>
-          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_HOME')" style="height: 28px; padding: 0 10px; font-size: 12px; background: #f1f5f9;" title="桌面">● 主页</button>
-          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_APP_SWITCH')" style="height: 28px; padding: 0 10px; font-size: 12px; background: #f1f5f9;" title="多任务">■ 多任务</button>
-          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_POWER')" style="height: 28px; padding: 0 10px; font-size: 12px; background: #f1f5f9;" title="亮灭屏">⏻ 电源</button>
-        </div>
+        <!-- Dual Phones Side-by-Side Viewport -->
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; flex: 1;">
+          @if (connectedDevices().length === 0) {
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; color: #94a3b8;">
+              <span class="material-symbols-outlined" style="font-size: 48px; margin-bottom: 12px;">phonelink_off</span>
+              <span style="font-size: 13px;">未检测到已连接的手机。点击上方【配对新手机】连接局域网无线设备。</span>
+            </div>
+          }
 
-        <!-- Fast Text Input -->
-        <div style="display: flex; gap: 6px; width: 100%; max-width: 280px; margin-top: 10px;">
-          <input 
-            type="text" 
-            [(ngModel)]="phoneTextInput" 
-            (keyup.enter)="sendText()" 
-            placeholder="电脑键盘打字直投手机..." 
-            style="flex: 1; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; outline: none;"
-          />
-          <button type="button" class="tab-selector-btn active" (click)="sendText()" style="height: 28px; padding: 0 10px; font-size: 12px;">发送</button>
-        </div>
+          <!-- Phone Column Loop -->
+          @for (serial of connectedDevices(); track serial; let idx = $index) {
+            <div style="display: flex; flex-direction: column; align-items: center; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); max-width: 280px; width: 100%;">
+              <!-- Phone Header Bar -->
+              <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  <span class="material-symbols-outlined" style="font-size: 16px; color: #6366f1;">smartphone</span>
+                  <strong style="font-size: 12px; color: #0f172a;" [title]="serial">机位 {{ idx + 1 }}</strong>
+                  <span style="font-size: 10px; color: #94a3b8; max-width: 110px; overflow: hidden; text-overflow: ellipsis;">{{ serial }}</span>
+                </div>
+                <button 
+                  type="button" 
+                  class="tab-selector-btn" 
+                  (click)="launchScrcpyDevice(serial)" 
+                  style="height: 20px; padding: 0 6px; font-size: 10px; background: #3b82f6; color: white;"
+                  title="为这台手机弹起独立的 60fps 硬件极速窗口"
+                >
+                  ⚡ 弹窗
+                </button>
+              </div>
 
-        <!-- Swipe & Shortcut Actions Grid -->
-        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; width: 100%; justify-content: center; max-width: 280px;">
-          <button type="button" class="tab-selector-btn" (click)="sendSwipe('up')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">⬆ 上滑</button>
-          <button type="button" class="tab-selector-btn" (click)="sendSwipe('down')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">⬇ 下滑</button>
-          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_VOLUME_UP')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">🔊 音量+</button>
-          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_VOLUME_DOWN')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">🔉 音量-</button>
-          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_ENTER')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">⏎ 回车确认</button>
-          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_DEL')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">⌫ 退格删除</button>
-          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_NOTIFICATION')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">🔔 下拉通知</button>
-        </div>
+              <!-- Interactive Touch Canvas -->
+              <div 
+                #phoneFrame
+                style="position: relative; width: 240px; height: 520px; border-radius: 10px; overflow: hidden; background: #000; box-shadow: 0 6px 16px rgba(0,0,0,0.25); border: 2px solid #334155; cursor: crosshair; user-select: none; flex-shrink: 0;"
+                (mousedown)="onScreenMouseDownDevice($event, phoneFrame, serial)"
+                (mouseup)="onScreenMouseUpDevice($event, phoneFrame, serial)"
+              >
+                <img 
+                  [src]="getLiveStreamUrl(serial)" 
+                  style="width: 100%; height: 100%; object-fit: fill; display: block;" 
+                  alt="Device Screen"
+                />
+              </div>
 
-        <!-- Keyboard Shortcut Cheat-sheet -->
-        <div style="margin-top: 10px; width: 100%; max-width: 280px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; font-size: 11px; color: #64748b; line-height: 1.4;">
-          <div style="font-weight: 700; color: #0f172a; margin-bottom: 2px;">⚡ 极速窗口快捷键互通：</div>
-          • 电脑任意键盘打字直接无缝输入手机<br>
-          • 鼠标右键 = 手机返回键 (Back)<br>
-          • 鼠标中键 = 回到桌面 (Home)<br>
-          • <kbd style="background:#e2e8f0;padding:1px 4px;border-radius:3px;">Alt + s</kbd> = 任务切换 (App Switch)
+              <!-- Compact Navigation Keys -->
+              <div style="display: flex; gap: 6px; margin-top: 8px; width: 100%; justify-content: center;">
+                <button type="button" class="tab-selector-btn" (click)="sendKeyDevice('KEYCODE_BACK', serial)" style="height: 24px; padding: 0 8px; font-size: 11px; background: #f1f5f9;" title="返回">◀ 返回</button>
+                <button type="button" class="tab-selector-btn" (click)="sendKeyDevice('KEYCODE_HOME', serial)" style="height: 24px; padding: 0 8px; font-size: 11px; background: #f1f5f9;" title="桌面">● 主页</button>
+                <button type="button" class="tab-selector-btn" (click)="sendKeyDevice('KEYCODE_APP_SWITCH', serial)" style="height: 24px; padding: 0 8px; font-size: 11px; background: #f1f5f9;" title="多任务">■ 任务</button>
+                <button type="button" class="tab-selector-btn" (click)="sendKeyDevice('KEYCODE_POWER', serial)" style="height: 24px; padding: 0 8px; font-size: 11px; background: #f1f5f9;" title="亮灭屏">⏻ 亮灭</button>
+              </div>
+
+              <!-- Text Input for This Device -->
+              <div style="display: flex; gap: 4px; width: 100%; margin-top: 6px;">
+                <input 
+                  type="text" 
+                  [(ngModel)]="phoneTextInputMap[serial]" 
+                  (keyup.enter)="sendTextDevice(serial)" 
+                  placeholder="文字投送到该手机..." 
+                  style="flex: 1; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 11px; outline: none;"
+                />
+                <button type="button" class="tab-selector-btn active" (click)="sendTextDevice(serial)" style="height: 24px; padding: 0 8px; font-size: 11px;">发送</button>
+              </div>
+
+              <!-- Swipe Shortcuts -->
+              <div style="display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; justify-content: center;">
+                <button type="button" class="tab-selector-btn" (click)="sendSwipeDevice('up', serial)" style="height: 22px; padding: 0 6px; font-size: 10px; background: #f8fafc;">⬆ 上滑</button>
+                <button type="button" class="tab-selector-btn" (click)="sendSwipeDevice('down', serial)" style="height: 22px; padding: 0 6px; font-size: 10px; background: #f8fafc;">⬇ 下滑</button>
+                <button type="button" class="tab-selector-btn" (click)="sendKeyDevice('KEYCODE_VOLUME_UP', serial)" style="height: 22px; padding: 0 6px; font-size: 10px; background: #f8fafc;">🔊+</button>
+                <button type="button" class="tab-selector-btn" (click)="sendKeyDevice('KEYCODE_VOLUME_DOWN', serial)" style="height: 22px; padding: 0 6px; font-size: 10px; background: #f8fafc;">🔉-</button>
+              </div>
+            </div>
+          }
         </div>
       </div>
     }

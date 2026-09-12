@@ -99,8 +99,8 @@ class WifiAdbService:
             "output": output
         }
 
-    async def pair_device(self, address: str, pairing_code: str) -> dict[str, Any]:
-        """Pair an Android 11+ wireless debugging device using IP:Port and Pairing Code."""
+    async def pair_device(self, address: str, pairing_code: str, connect_port: str | None = None) -> dict[str, Any]:
+        """Pair an Android 11+ wireless debugging device using IP:Port and Pairing Code, then auto-connect."""
         address = address.strip()
         pairing_code = pairing_code.strip()
         if not address or not pairing_code:
@@ -109,10 +109,36 @@ class WifiAdbService:
         code, stdout, stderr = await self.run_adb_cmd("pair", address, pairing_code)
         output = (stdout + stderr).strip()
         success = "successfully paired" in output.lower()
+
+        connect_msg = ""
+        connect_success = False
+
+        if success:
+            # If user provided connection port (or default to pair port or 5555)
+            host_ip = address.split(":")[0]
+            target_connect_endpoint = f"{host_ip}:{connect_port}" if connect_port else (f"{host_ip}:5555")
+            
+            # If connect_port wasn't explicit, check mDNS first for the newly paired device connect port
+            if not connect_port:
+                await asyncio.sleep(1.0)
+                mdns_list = await self.scan_mdns_services()
+                for item in mdns_list:
+                    ep = item.get("endpoint", "")
+                    if ep.startswith(host_ip + ":"):
+                        target_connect_endpoint = ep
+                        break
+
+            # Automatically connect to target endpoint
+            conn_res = await self.connect_device(target_connect_endpoint)
+            connect_success = conn_res.get("success", False)
+            connect_msg = conn_res.get("output", "")
+
         return {
             "success": success,
             "address": address,
-            "output": output
+            "output": output,
+            "connect_success": connect_success,
+            "connect_message": connect_msg
         }
 
     async def scan_mdns_services(self) -> list[dict[str, Any]]:
