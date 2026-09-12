@@ -231,7 +231,7 @@ export class AgentService {
   // Notes and Tab States
   public currentNotes = signal<Record<string, string>>({});
   public selectedNoteKey = signal<string>('task_plan.md');
-  public activeTab = signal<'tasks' | 'notes'>('tasks');
+  public activeTab = signal<'tasks' | 'notes' | 'screen'>('tasks');
 
   // Video Replay Floating Window States
   public isVideoWindowOpen = signal<boolean>(false);

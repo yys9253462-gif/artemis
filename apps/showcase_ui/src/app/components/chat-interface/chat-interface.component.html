@@ -25,7 +25,15 @@ limitations under the License.
         (click)="agentService.activeTab.set('tasks')"
         >
         <span class="material-symbols-outlined tab-icon">list_alt</span>
-        <span class="tab-text">Task Queue</span>
+        <span class="tab-text">任务队列</span>
+      </button>
+      <button
+        class="tab-selector-btn"
+        [class.active]="agentService.activeTab() === 'screen'"
+        (click)="agentService.activeTab.set('screen')"
+        >
+        <span class="material-symbols-outlined tab-icon">screenshot_monitor</span>
+        <span class="tab-text">实时投屏触控</span>
       </button>
       <button
         class="tab-selector-btn"
@@ -33,7 +41,7 @@ limitations under the License.
         (click)="agentService.activeTab.set('notes')"
         >
         <span class="material-symbols-outlined tab-icon">description</span>
-        <span class="tab-text">Notes & Plans</span>
+        <span class="tab-text">规划与笔记</span>
       </button>
     </div>
 
@@ -373,6 +381,58 @@ limitations under the License.
             }
           </div>
         }
+      </div>
+    }
+
+    <!-- 📱 Real-time Screen & Touch Tab Content -->
+    @if (agentService.activeTab() === 'screen') {
+      <div class="live-screen-tab-panel" style="display: flex; flex-direction: column; align-items: center; padding: 15px; height: 100%; box-sizing: border-box; overflow-y: auto;">
+        <div style="font-size: 0.8rem; color: #10b981; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          <span class="material-symbols-outlined" style="font-size: 16px;">sensors</span>
+          <span>实时投屏流已连接 · 鼠标可直接点击/滑动</span>
+        </div>
+
+        <!-- Phone Frame Wrapper -->
+        <div 
+          #phoneScreen
+          style="position: relative; width: 280px; height: 600px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 2px solid #334155; cursor: crosshair; user-select: none; flex-shrink: 0;"
+          (mousedown)="onScreenMouseDown($event, phoneScreen)"
+          (mouseup)="onScreenMouseUp($event, phoneScreen)"
+        >
+          <img 
+            src="/api/stream/device-live" 
+            style="width: 100%; height: 100%; object-fit: fill; display: block;" 
+            alt="Device Screen"
+          />
+        </div>
+
+        <!-- Keys Bar -->
+        <div style="display: flex; gap: 8px; margin-top: 12px; width: 100%; justify-content: center;">
+          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_BACK')" style="height: 28px; padding: 0 10px; font-size: 12px; background: #f1f5f9;" title="返回">◀ 返回</button>
+          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_HOME')" style="height: 28px; padding: 0 10px; font-size: 12px; background: #f1f5f9;" title="桌面">● 主页</button>
+          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_APP_SWITCH')" style="height: 28px; padding: 0 10px; font-size: 12px; background: #f1f5f9;" title="多任务">■ 多任务</button>
+          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_POWER')" style="height: 28px; padding: 0 10px; font-size: 12px; background: #f1f5f9;" title="亮灭屏">⏻ 电源</button>
+        </div>
+
+        <!-- Fast Text Input -->
+        <div style="display: flex; gap: 6px; width: 100%; max-width: 280px; margin-top: 10px;">
+          <input 
+            type="text" 
+            [(ngModel)]="phoneTextInput" 
+            (keyup.enter)="sendText()" 
+            placeholder="发送文字到手机输入框..." 
+            style="flex: 1; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; outline: none;"
+          />
+          <button type="button" class="tab-selector-btn active" (click)="sendText()" style="height: 28px; padding: 0 10px; font-size: 12px;">发送</button>
+        </div>
+
+        <!-- Swipe Shortcuts -->
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <button type="button" class="tab-selector-btn" (click)="sendSwipe('up')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">⬆ 上滑</button>
+          <button type="button" class="tab-selector-btn" (click)="sendSwipe('down')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">⬇ 下滑</button>
+          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_VOLUME_UP')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">🔊 音量+</button>
+          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_VOLUME_DOWN')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">🔉 音量-</button>
+        </div>
       </div>
     }
   </main>

@@ -73,6 +73,74 @@ export class ChatInterfaceComponent {
     });
   });
 
+  public isMouseDownOnScreen = false;
+  private touchStartX = 0;
+  private touchStartY = 0;
+  private touchStartTime = 0;
+  public phoneTextInput = '';
+
+  public onScreenMouseDown(event: MouseEvent, target: HTMLElement): void {
+    this.isMouseDownOnScreen = true;
+    const rect = target.getBoundingClientRect();
+    this.touchStartX = (event.clientX - rect.left) / rect.width;
+    this.touchStartY = (event.clientY - rect.top) / rect.height;
+    this.touchStartTime = Date.now();
+  }
+
+  public onScreenMouseUp(event: MouseEvent, target: HTMLElement): void {
+    if (!this.isMouseDownOnScreen) return;
+    this.isMouseDownOnScreen = false;
+    const rect = target.getBoundingClientRect();
+    const endX = (event.clientX - rect.left) / rect.width;
+    const endY = (event.clientY - rect.top) / rect.height;
+    const duration = Date.now() - this.touchStartTime;
+
+    const dx = Math.abs(endX - this.touchStartX);
+    const dy = Math.abs(endY - this.touchStartY);
+
+    if (dx < 0.03 && dy < 0.03) {
+      this.sendTouch('tap', {
+        x: Math.round(this.touchStartX * 1000),
+        y: Math.round(this.touchStartY * 1000)
+      });
+    } else {
+      this.sendTouch('swipe', {
+        x1: Math.round(this.touchStartX * 1000),
+        y1: Math.round(this.touchStartY * 1000),
+        x2: Math.round(endX * 1000),
+        y2: Math.round(endY * 1000),
+        duration: Math.max(200, duration)
+      });
+    }
+  }
+
+  public sendTouch(action: string, payload: any): void {
+    fetch('/api/stream/touch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...payload })
+    }).catch(err => console.error('Touch send error:', err));
+  }
+
+  public sendKey(keycode: string): void {
+    this.sendTouch('keyevent', { keycode });
+  }
+
+  public sendSwipe(dir: 'up' | 'down'): void {
+    if (dir === 'up') {
+      this.sendTouch('swipe', { x1: 500, y1: 800, x2: 500, y2: 200, duration: 300 });
+    } else {
+      this.sendTouch('swipe', { x1: 500, y1: 200, x2: 500, y2: 800, duration: 300 });
+    }
+  }
+
+  public sendText(): void {
+    const text = this.phoneTextInput.trim();
+    if (!text) return;
+    this.sendTouch('text', { text });
+    this.phoneTextInput = '';
+  }
+
   /**
    * Submit a new task goal to the backend
    */

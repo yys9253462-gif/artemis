@@ -63,6 +63,9 @@ class DeviceStreamService:
     async def _capture_loop(self):
         """Background frame capture loop that runs while listeners > 0."""
         logger.info("[StreamService] Starting live screen capture loop...")
+        import io
+        from PIL import Image
+
         while self._active_listeners > 0:
             try:
                 start_t = time.time()
@@ -80,11 +83,28 @@ class DeviceStreamService:
                 )
                 stdout, _ = await proc.communicate()
                 if proc.returncode == 0 and len(stdout) > 1000:
-                    self._latest_frame = stdout
-                    self._last_frame_time = time.time()
+                    # Strip leading multi-display or adb warnings if present
+                    png_idx = stdout.find(b"\x89PNG\r\n\x1a\n")
+                    if png_idx != -1:
+                        clean_png = stdout[png_idx:]
+                        try:
+                            # Convert to optimized JPEG for ultra-low latency browser playback
+                            img = Image.open(io.BytesIO(clean_png)).convert("RGB")
+                            w, h = img.size
+                            target_w = 480
+                            target_h = int(h * (target_w / w))
+                            img_small = img.resize((target_w, target_h), Image.Resampling.BILINEAR)
+                            buf = io.BytesIO()
+                            img_small.save(buf, format="JPEG", quality=75)
+                            self._latest_frame = buf.getvalue()
+                            self._last_frame_time = time.time()
+                        except Exception as dec_err:
+                            logger.debug(f"[StreamService] Decode error: {dec_err}")
+                            self._latest_frame = clean_png
+                            self._last_frame_time = time.time()
 
                 elapsed = time.time() - start_t
-                delay = max(0.03, 0.08 - elapsed)
+                delay = max(0.02, 0.06 - elapsed)
                 await asyncio.sleep(delay)
             except asyncio.CancelledError:
                 break
@@ -122,7 +142,7 @@ class DeviceStreamService:
                     frame_bytes = self._latest_frame
                     yield (
                         b"--frame\r\n"
-                        b"Content-Type: image/png\r\n"
+                        b"Content-Type: image/jpeg\r\n"
                         b"Content-Length: "
                         + str(len(frame_bytes)).encode()
                         + b"\r\n\r\n"
