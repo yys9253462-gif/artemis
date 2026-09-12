@@ -989,6 +989,21 @@ def get_google_llm(
     include_thoughts: bool | None = None,
     enable_grounding: bool = False,
 ) -> BaseChatModel:
+    # If user has configured OpenAI relay credentials but no Google API key,
+    # automatically adapt get_google_llm to route through the configured OpenAI relay
+    if settings.OPENAI_API_KEY and not settings.GOOGLE_API_KEY:
+        ep = ModelEndpoint(
+            provider=ModelProvider.OPENAI,
+            model_name="gemini-3.8-flash-high",
+            temperature=temperature or 0.0,
+            timeout_seconds=timeout or 60.0,
+            thinking_budget=thinking_budget,
+            thinking_level=thinking_level,
+            include_thoughts=include_thoughts,
+            enable_grounding=False,
+        )
+        return ModelFactory.create_model(ep)
+
     ep = ModelEndpoint(
         provider=ModelProvider.GOOGLE,
         model_name=model_name,

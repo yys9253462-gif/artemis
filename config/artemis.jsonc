@@ -139,7 +139,7 @@
       // replacing images only after strictly objective, high-density summaries are ready.
       "step_summarizer": {
         "enabled": true, // Whether background step summarization is active
-        "model": "gemini-3.5-flash-lite", // Lightweight model for fast background inference
+        "model": "gemini-3.8-flash-high", // Lightweight model for fast background inference
         "prune_history_xml": true // Prune outdated heavy XML trees from historical steps
       }
     },
