@@ -302,9 +302,10 @@ async def serve_showcase_spa(full_path: str):
 
     # Admin / Debug Console routes
     if (
-        clean_path in ("admin", "debug")
+        clean_path in ("admin", "debug", "control")
         or clean_path.startswith("admin/")
         or clean_path.startswith("debug/")
+        or clean_path.startswith("control/")
     ):
         admin_index = _admin_console_dir / "index.html"
         if admin_index.exists():

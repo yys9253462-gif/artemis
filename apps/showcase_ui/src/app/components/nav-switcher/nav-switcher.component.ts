@@ -41,7 +41,15 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         title="Open Workspace"
       >
         <span class="material-symbols-outlined tab-icon">space_dashboard</span>
-        <span class="tab-label">Workspace</span>
+        <span class="tab-label">工作空间</span>
+      </a>
+      <a 
+        href="/admin" 
+        class="nav-tab-btn"
+        title="打开实时投屏、无线ADB与完整调试控制台"
+      >
+        <span class="material-symbols-outlined tab-icon">screenshot_monitor</span>
+        <span class="tab-label">实时投屏控制台</span>
       </a>
     </nav>
   `,
