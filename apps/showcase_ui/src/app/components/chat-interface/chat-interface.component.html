@@ -395,9 +395,21 @@ limitations under the License.
     <!-- 📱 Real-time Screen & Touch Tab Content -->
     @if (agentService.activeTab() === 'screen') {
       <div class="live-screen-tab-panel" style="display: flex; flex-direction: column; align-items: center; padding: 15px; height: 100%; box-sizing: border-box; overflow-y: auto;">
-        <div style="font-size: 0.8rem; color: #10b981; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-          <span class="material-symbols-outlined" style="font-size: 16px;">sensors</span>
-          <span>实时投屏流已连接 · 鼠标可直接点击/滑动</span>
+        <!-- Header Toolbar -->
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div style="font-size: 0.8rem; color: #10b981; display: flex; align-items: center; gap: 6px;">
+            <span class="material-symbols-outlined" style="font-size: 16px;">sensors</span>
+            <span>实时投屏流已连接</span>
+          </div>
+          <button 
+            type="button" 
+            class="tab-selector-btn active" 
+            (click)="launchNativeScrcpy()" 
+            style="height: 24px; padding: 0 8px; font-size: 11px; background: #3b82f6; color: white;"
+            title="一键调起桌面硬件级极速 60fps Scrcpy 极速窗口（支持键盘全键盘输入与超低延迟）"
+          >
+            ⚡ 弹起 60fps 极速窗口
+          </button>
         </div>
 
         <!-- Phone Frame Wrapper -->

@@ -141,6 +141,17 @@ export class ChatInterfaceComponent {
     this.phoneTextInput = '';
   }
 
+  public launchNativeScrcpy(): void {
+    fetch('/api/stream/launch-scrcpy', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          alert('唤起 Scrcpy 窗口失败: ' + (data.error || '未知错误'));
+        }
+      })
+      .catch(err => alert('网络异常: ' + err.message));
+  }
+
   // ⏰ Scheduler State for Workspace
   public scheduledTasks = signal<any[]>([]);
   public isCreatingScheduledTask = signal<boolean>(false);

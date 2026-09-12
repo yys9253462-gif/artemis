@@ -67,6 +67,33 @@ async def inject_device_touch(request: Request):
     return JSONResponse({"success": success, "action": action})
 
 
+@router.post("/api/stream/launch-scrcpy")
+async def launch_native_scrcpy():
+    """Launch hardware-accelerated, ultra-low latency (<30ms) 60fps Scrcpy desktop window with mouse & keyboard control."""
+    from artemis.toolchain import find_scrcpy
+    scrcpy_bin = find_scrcpy()
+    serial = await device_stream_service.get_device_serial()
+    cmd = [scrcpy_bin]
+    if serial:
+        cmd.extend(["-s", serial])
+    cmd.extend([
+        "--window-title=Artemis 极速真机操控 (60fps 零延迟)",
+        "-m", "1080",
+        "--max-fps", "60",
+        "--stay-awake",
+        "--always-on-top",
+    ])
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL
+        )
+        return JSONResponse({"success": True, "pid": proc.pid, "message": "Scrcpy 极速窗口已开启"})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)})
+
+
 # ---------------------------------------------------------------------------
 # Wireless ADB Management Endpoints
 # ---------------------------------------------------------------------------
