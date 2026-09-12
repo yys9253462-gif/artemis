@@ -137,44 +137,47 @@ class ScrcpyCompanionDock:
         except Exception:
             pass
 
-        # Calculate initial position based on target scrcpy window
+        # Calculate initial position: docked to the RIGHT side of the scrcpy phone window
         rect = win32gui.GetWindowRect(self.target_hwnd)
         left, top, right, bottom = rect
-        w = max(400, right - left)
-        h = 44
-        y = bottom
+        dock_w = 72
+        dock_h = 8 * 38 + 10
+        # Position vertically aligned to top of scrcpy window, placed at right edge
+        x = right
+        y = max(10, top + 30)
 
         self.dock_hwnd = win32gui.CreateWindowEx(
             win32con.WS_EX_TOPMOST | win32con.WS_EX_TOOLWINDOW,
             className,
-            "Artemis 极速真机导航控制栏",
+            "Artemis 侧边实体按键栏",
             win32con.WS_POPUP | win32con.WS_VISIBLE | win32con.WS_BORDER,
-            left, y, w, h,
+            x, y, dock_w, dock_h,
             0, 0, hInstance, None
         )
 
         buttons = [
-            ("◀ 返回", 101, 5, 54),
-            ("● 桌面", 102, 62, 54),
-            ("■ 任务", 103, 119, 54),
-            ("🔔 通知", 104, 176, 54),
-            ("⏻ 亮灭", 105, 233, 54),
-            ("🔊+", 106, 290, 42),
-            ("🔉-", 107, 335, 42),
-            ("📋粘贴", 108, 380, 52),
+            ("◀ 返回", 101),
+            ("● 桌面", 102),
+            ("■ 任务", 103),
+            ("🔔 通知", 104),
+            ("⏻ 亮灭", 105),
+            ("🔊 音量+", 106),
+            ("🔉 音量-", 107),
+            ("📋 粘贴", 108),
         ]
 
-        for text, bid, bx, bw in buttons:
+        for idx, (text, bid) in enumerate(buttons):
+            by = 6 + idx * 37
             win32gui.CreateWindow(
                 "BUTTON", text,
                 win32con.WS_TABSTOP | win32con.WS_VISIBLE | win32con.WS_CHILD | win32con.BS_PUSHBUTTON,
-                bx, 6, bw, 30,
+                5, by, 60, 32,
                 self.dock_hwnd, bid, hInstance, None
             )
 
         self.is_running = True
 
-        # Watchdog loop: follow target window position and exit when target closes
+        # Watchdog loop: follow target window position and snap to RIGHT side
         def follower():
             while self.is_running:
                 try:
@@ -182,12 +185,13 @@ class ScrcpyCompanionDock:
                         break
                     t_rect = win32gui.GetWindowRect(self.target_hwnd)
                     t_left, t_top, t_right, t_bottom = t_rect
-                    t_w = max(440, t_right - t_left)
-                    # Snap directly beneath target window
+                    # Snap vertically directly beside the right border of the scrcpy window
+                    snap_x = t_right - 1
+                    snap_y = max(10, t_top + 30)
                     win32gui.SetWindowPos(
                         self.dock_hwnd,
                         win32con.HWND_TOPMOST,
-                        t_left, t_bottom - 2, t_w, 44,
+                        snap_x, snap_y, dock_w, dock_h,
                         win32con.SWP_NOACTIVATE | win32con.SWP_SHOWWINDOW
                     )
                     time.sleep(0.04)
