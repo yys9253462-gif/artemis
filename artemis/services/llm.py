@@ -597,6 +597,10 @@ class RobustChatModelWrapper:
 
     def with_structured_output(self, *args, **kwargs):
         if hasattr(self.base_model, "with_structured_output"):
+            # If method is not explicitly specified for OpenAI-compatible providers,
+            # enforce method="function_calling" to avoid empty json_mode response errors on relays
+            if "method" not in kwargs:
+                kwargs["method"] = "function_calling"
             return RobustChatModelWrapper(
                 self.base_model.with_structured_output(*args, **kwargs),
                 self.ctx,
