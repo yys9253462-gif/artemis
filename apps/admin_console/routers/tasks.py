@@ -595,3 +595,23 @@ async def automation_webhook_trigger(request: Request):
         ingress="webhook",
     )
     return {"status": "enqueued", "goal": goal, "profile": profile, "result": res}
+
+
+@router.post("/api/ecommerce/generate-migration-prompt")
+async def generate_ecommerce_migration_prompt(request: Request):
+    """根据来源与目标店铺管理端，自动生成标准跨App铺货搬家目标指令。"""
+    from apps.admin_console.services.ecommerce_migration_service import ecommerce_migration_service
+
+    body = await request.json()
+    source_app = body.get("source_app", "抖店")
+    target_app = body.get("target_app", "千牛")
+    keyword = body.get("product_keyword")
+    instructions = body.get("custom_instructions")
+
+    prompt = ecommerce_migration_service.generate_migration_prompt(
+        source_app_name=source_app,
+        target_app_name=target_app,
+        product_keyword=keyword,
+        custom_instructions=instructions,
+    )
+    return {"prompt": prompt, "source_app": source_app, "target_app": target_app}

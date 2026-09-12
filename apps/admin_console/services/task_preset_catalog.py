@@ -87,19 +87,23 @@ APP_REGISTRY: dict[str, dict[str, str]] = {
         "icon": "chat",
         "category": "communication",
     },
-    # Popular Ecosystem Apps
-    "com.tencent.mm": {"name": "WeChat", "icon": "forum", "category": "social"},
-    "com.xingin.xhs": {"name": "Xiaohongshu", "icon": "auto_stories", "category": "social"},
-    "com.sankuai.meituan": {"name": "Meituan", "icon": "restaurant", "category": "lifestyle"},
-    "com.dianping.v1": {"name": "Dianping", "icon": "star", "category": "lifestyle"},
-    "tv.danmaku.bili": {"name": "Bilibili", "icon": "video_library", "category": "entertainment"},
+    # Popular Chinese Ecosystem & E-Commerce Apps
+    "com.taobao.qianniu": {"name": "千牛卖家版", "icon": "store", "category": "ecommerce"},
+    "com.taobao.idlefish": {"name": "闲鱼", "icon": "loyalty", "category": "ecommerce"},
+    "com.taobao.taobao": {"name": "淘宝", "icon": "shopping_bag", "category": "ecommerce"},
+    "com.ss.android.ugc.aweme": {"name": "抖音", "icon": "videocam", "category": "social"},
+    "com.xingin.xhs": {"name": "小红书", "icon": "auto_stories", "category": "social"},
+    "com.tencent.mm": {"name": "微信", "icon": "forum", "category": "social"},
+    "com.sankuai.meituan": {"name": "美团", "icon": "restaurant", "category": "lifestyle"},
+    "com.dianping.v1": {"name": "大众点评", "icon": "star", "category": "lifestyle"},
+    "tv.danmaku.bili": {"name": "哔哩哔哩", "icon": "video_library", "category": "entertainment"},
     "com.eg.android.AlipayGphone": {
-        "name": "Alipay",
+        "name": "支付宝",
         "icon": "account_balance_wallet",
         "category": "finance",
     },
     "com.netease.cloudmusic": {
-        "name": "NetEase Music",
+        "name": "网易云音乐",
         "icon": "headphones",
         "category": "entertainment",
     },
@@ -112,6 +116,50 @@ APP_REGISTRY: dict[str, dict[str, str]] = {
 # ============================================================================
 
 PRESET_TASK_CATALOG: list[TaskPreset] = [
+    # 0. E-Commerce Multi-App Migration Pipeline (Top Priority)
+    TaskPreset(
+        id="ecommerce_doudian_to_qianniu",
+        title="抖店商品主图详情自动搬运发布至淘宝千牛",
+        description="从抖店提取商品标题、价格、主图与详情图，自动流转并发布到淘宝千牛店铺草稿箱",
+        goal="打开抖店 把抖店的商品主图 详情图 类目按照同类目给我发布到淘宝店铺里 淘宝店铺是用千牛控制的",
+        profile="pro",
+        category="cross_app",
+        tag="抖店 + 千牛",
+        apps=[
+            AppInfo(name="抖店", icon="store", pkg="com.ss.android.ugc.aweme", category="ecommerce"),
+            AppInfo(name="千牛", icon="storefront", pkg="com.taobao.qianniu", category="ecommerce"),
+        ],
+        required_packages=["com.taobao.qianniu"],
+        priority=100,
+    ),
+    TaskPreset(
+        id="ecommerce_idlefish_publish",
+        title="闲鱼二手闲置自动一键铺货上架",
+        description="从相册选择商品拍摄原图，智能生成吸引人的闲鱼商品文案并一键上架",
+        goal="打开闲鱼，点击发闲置，从相册选择最新商品照片，自动填写商品标题、描述和价格并保存草稿。",
+        profile="flash",
+        category="flash",
+        tag="闲鱼铺货",
+        apps=[
+            AppInfo(name="闲鱼", icon="loyalty", pkg="com.taobao.idlefish", category="ecommerce"),
+        ],
+        required_packages=["com.taobao.idlefish"],
+        priority=98,
+    ),
+    TaskPreset(
+        id="ecommerce_xhs_note_to_doudian",
+        title="小红书爆款图文笔记自动转电商挂车",
+        description="抓取小红书热门种草笔记文案与精美图片，提炼关键词用于电商营销",
+        goal="打开小红书，搜索当季爆款穿搭种草笔记，提取点赞最高的笔记正文文案与主图并保存到手机相册。",
+        profile="pro",
+        category="cross_app",
+        tag="小红书图文",
+        apps=[
+            AppInfo(name="小红书", icon="auto_stories", pkg="com.xingin.xhs", category="social"),
+        ],
+        required_packages=["com.xingin.xhs"],
+        priority=96,
+    ),
     # 1. Google Maps
     TaskPreset(
         id="maps_coffee",

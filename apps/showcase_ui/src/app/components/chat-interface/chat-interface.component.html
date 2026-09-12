@@ -45,6 +45,14 @@ limitations under the License.
       </button>
       <button
         class="tab-selector-btn"
+        [class.active]="agentService.activeTab() === 'ecommerce'"
+        (click)="agentService.activeTab.set('ecommerce')"
+        >
+        <span class="material-symbols-outlined tab-icon">sync_saved_locally</span>
+        <span class="tab-text">电商搬家</span>
+      </button>
+      <button
+        class="tab-selector-btn"
         [class.active]="agentService.activeTab() === 'notes'"
         (click)="agentService.activeTab.set('notes')"
         >
@@ -621,6 +629,106 @@ limitations under the License.
               </div>
             </div>
           }
+        </div>
+      </div>
+    }
+
+    <!-- 🛍️ E-Commerce Cross-App Migration Pipeline Tab Content -->
+    @if (agentService.activeTab() === 'ecommerce') {
+      <div class="ecommerce-tab-panel" style="padding: 16px; height: 100%; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <div>
+            <div style="font-weight: 700; font-size: 14px; color: #0f172a;">🛍️ 跨平台电商全流程搬家与协同</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">自动跨 App 提取主图、详情图、标题与类目并铺货上架</div>
+          </div>
+        </div>
+
+        <!-- Preset Quick Workflows -->
+        <div style="margin-bottom: 16px;">
+          <div style="font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 8px;">🔥 常用电商搬家工作流模板：</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div 
+              (click)="applyEcomMigrationPreset('抖店', '千牛', '打开抖店 把抖店的商品主图 详情图 类目按照同类目给我发布到淘宝店铺里 淘宝店铺是用千牛控制的')"
+              style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: all 0.2s;"
+              onmouseover="this.style.borderColor='#6366f1';this.style.background='#f5f3ff'"
+              onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'"
+            >
+              <div style="font-size: 12px; font-weight: 700; color: #1e1b4b; display: flex; align-items: center; gap: 6px;">
+                <span>抖店 ➔ 淘宝千牛全自动搬家铺货</span>
+                <span style="font-size: 10px; background: #e0e7ff; color: #4338ca; padding: 1px 5px; border-radius: 4px;">双App协同</span>
+              </div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                自动抓取抖店商品主图、详情图、价格与类目，切换到千牛卖家中心新增宝贝并存为草稿。
+              </div>
+            </div>
+
+            <div 
+              (click)="applyEcomMigrationPreset('相册', '闲鱼', '打开闲鱼，点击发闲置，从相册选择最新商品照片，自动填写商品标题、描述和价格并保存草稿。')"
+              style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: all 0.2s;"
+              onmouseover="this.style.borderColor='#6366f1';this.style.background='#f5f3ff'"
+              onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'"
+            >
+              <div style="font-size: 12px; font-weight: 700; color: #1e1b4b; display: flex; align-items: center; gap: 6px;">
+                <span>手机相册实拍 ➔ 闲鱼二手一键铺货</span>
+                <span style="font-size: 10px; background: #fef3c7; color: #b45309; padding: 1px 5px; border-radius: 4px;">智能生成文案</span>
+              </div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                选择相册实拍产品图，自动提炼成吸睛的闲鱼爆款文案、标价并上架。
+              </div>
+            </div>
+
+            <div 
+              (click)="applyEcomMigrationPreset('小红书', '抖店', '打开小红书搜索当季热门爆款种草文案与精美图片，提炼关键词并保存到手机相册，准备用于抖店商品详情装修。')"
+              style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: all 0.2s;"
+              onmouseover="this.style.borderColor='#6366f1';this.style.background='#f5f3ff'"
+              onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'"
+            >
+              <div style="font-size: 12px; font-weight: 700; color: #1e1b4b; display: flex; align-items: center; gap: 6px;">
+                <span>小红书爆款图文 ➔ 提炼电商营销素材</span>
+                <span style="font-size: 10px; background: #fce7f3; color: #be185d; padding: 1px 5px; border-radius: 4px;">自媒体选品</span>
+              </div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                抓取小红书热门笔记主图与正文排版，提炼卖点供电商主图与详情页复用。
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom Migration Pipeline Generator -->
+        <div style="background: #ffffff; border: 1px solid #cbd5e0; border-radius: 10px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 10px;">🛠️ 自定义跨应用搬家指令生成器：</div>
+          
+          <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+            <div style="flex: 1;">
+              <label style="font-size: 11px; color: #64748b; display: block; margin-bottom: 3px;">数据来源 App：</label>
+              <input type="text" [(ngModel)]="ecomSourceApp" placeholder="如 抖店 / 1688 / 淘宝" style="width: 100%; padding: 6px 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; box-sizing: border-box; outline: none;"/>
+            </div>
+            <div style="display: flex; align-items: flex-end; padding-bottom: 6px; color: #6366f1; font-weight: bold;">➔</div>
+            <div style="flex: 1;">
+              <label style="font-size: 11px; color: #64748b; display: block; margin-bottom: 3px;">目标上架 App：</label>
+              <input type="text" [(ngModel)]="ecomTargetApp" placeholder="如 千牛 / 闲鱼 / 小红书" style="width: 100%; padding: 6px 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; box-sizing: border-box; outline: none;"/>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 10px;">
+            <label style="font-size: 11px; color: #64748b; display: block; margin-bottom: 3px;">指定商品关键词 (选填)：</label>
+            <input type="text" [(ngModel)]="ecomProductKeyword" placeholder="如 夏季透气运动鞋 / 加绒卫衣" style="width: 100%; padding: 6px 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; box-sizing: border-box; outline: none;"/>
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <label style="font-size: 11px; color: #64748b; display: block; margin-bottom: 3px;">附加要求 (选填)：</label>
+            <input type="text" [(ngModel)]="ecomCustomInstructions" placeholder="如 价格统一上浮15% / 仅存为草稿不直接发布" style="width: 100%; padding: 6px 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; box-sizing: border-box; outline: none;"/>
+          </div>
+
+          <button 
+            type="button" 
+            class="tab-selector-btn active" 
+            (click)="generateAndApplyEcomPrompt()" 
+            [disabled]="isGeneratingEcomPrompt()"
+            style="width: 100%; height: 32px; font-size: 12px; background: #6366f1; color: white; justify-content: center;"
+          >
+            {{ isGeneratingEcomPrompt() ? '正在生成全流程任务...' : '⚡ 一键生成搬家指令并填入输入框' }}
+          </button>
         </div>
       </div>
     }

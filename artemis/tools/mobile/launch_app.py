@@ -71,11 +71,46 @@ async def find_package(ctx: ArtemisContext, app_name: str, use_fallback: bool = 
         all_packages = await list_packages_async(ctx=ctx)
         package_set = {p.strip() for p in all_packages.split("\n") if p.strip()}
 
-        # Fast path: If app_name is already directly an installed package name
+        # Fast path 1: If app_name is already directly an installed package name
         if app_name in package_set:
             if isinstance(package_cache, dict):
                 package_cache[app_name] = app_name
             return app_name
+
+        # Fast path 2: Instant Zero-LLM alias lookup for high-frequency Chinese E-commerce & Social Apps
+        app_name_norm = app_name.strip().lower()
+        FAST_APP_ALIASES: dict[str, list[str]] = {
+            "千牛": ["com.taobao.qianniu"],
+            "千牛卖家": ["com.taobao.qianniu"],
+            "千牛工作台": ["com.taobao.qianniu"],
+            "抖店": ["com.bytedance.ecom.seller", "com.ss.android.ugc.aweme", "com.bytedance.compass"],
+            "抖音": ["com.ss.android.ugc.aweme"],
+            "闲鱼": ["com.taobao.idlefish"],
+            "淘宝": ["com.taobao.taobao"],
+            "小红书": ["com.xingin.xhs"],
+            "微信": ["com.tencent.mm"],
+            "拼多多": ["com.xunmeng.pinduoduo"],
+            "京东": ["com.jingdong.app.mall"],
+            "美团": ["com.sankuai.meituan"],
+            "美团外卖": ["com.sankuai.meituan.takeoutnew"],
+            "大众点评": ["com.dianping.v1"],
+            "快手": ["com.smile.gifmaker"],
+            "支付宝": ["com.alipay.android.phone.vendor", "com.eg.android.AlipayGphone"],
+            "网易云音乐": ["com.netease.cloudmusic"],
+            "网易云": ["com.netease.cloudmusic"],
+            "qq音乐": ["com.tencent.qqmusic"],
+            "哔哩哔哩": ["tv.danmaku.bili"],
+            "b站": ["tv.danmaku.bili"],
+            "微博": ["com.sina.weibo"],
+        }
+        for alias, candidate_pkgs in FAST_APP_ALIASES.items():
+            if alias in app_name_norm or app_name_norm in alias:
+                for cand in candidate_pkgs:
+                    if cand in package_set:
+                        logger.info(f"[FastLauncher] Zero-LLM hit: '{app_name}' -> '{cand}'")
+                        if isinstance(package_cache, dict):
+                            package_cache[app_name] = cand
+                        return cand
 
         hopper_output: HopperOutput = await hopper(
             ctx=ctx,

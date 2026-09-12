@@ -348,6 +348,46 @@ export class ChatInterfaceComponent {
       .catch(err => console.error('Delete error:', err));
   }
 
+  // 🛍️ E-Commerce Auto-Migration Pipeline State
+  public ecomSourceApp = '抖店';
+  public ecomTargetApp = '千牛';
+  public ecomProductKeyword = '';
+  public ecomCustomInstructions = '';
+  public isGeneratingEcomPrompt = signal<boolean>(false);
+
+  public applyEcomMigrationPreset(source: string, target: string, samplePrompt: string): void {
+    this.ecomSourceApp = source;
+    this.ecomTargetApp = target;
+    this.taskInput = samplePrompt;
+    this.agentService.activeTab.set('tasks');
+  }
+
+  public generateAndApplyEcomPrompt(): void {
+    this.isGeneratingEcomPrompt.set(true);
+    fetch('/api/ecommerce/generate-migration-prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source_app: this.ecomSourceApp,
+        target_app: this.ecomTargetApp,
+        product_keyword: this.ecomProductKeyword.trim() || undefined,
+        custom_instructions: this.ecomCustomInstructions.trim() || undefined
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        this.isGeneratingEcomPrompt.set(false);
+        if (data.prompt) {
+          this.taskInput = data.prompt;
+          this.agentService.activeTab.set('tasks');
+        }
+      })
+      .catch(err => {
+        this.isGeneratingEcomPrompt.set(false);
+        console.error('Failed to generate ecom prompt:', err);
+      });
+  }
+
   /**
    * Submit a new task goal to the backend
    */
