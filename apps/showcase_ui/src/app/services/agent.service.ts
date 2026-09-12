@@ -412,6 +412,8 @@ export class AgentService {
     return this.http.get<SessionUsage>(`/api/sessions/${encodeURIComponent(sessionId)}/usage`);
   }
 
+  public selectedDeviceSerial = signal<string | null>(null);
+
   /**
    * Run a new task by submitting to backend queue
    */
@@ -420,7 +422,8 @@ export class AgentService {
     profile: string = 'flash',
     expectedOutput?: string,
     enableOutputter?: boolean,
-    proTuning?: ProTuningOptions
+    proTuning?: ProTuningOptions,
+    deviceSerial?: string | null
   ): Observable<any> {
     return new Observable((obs) => {
       const submittedEvent: StartupProgressEvent = {
@@ -429,7 +432,11 @@ export class AgentService {
         timestamp: Date.now() / 1000
       };
       this.pendingStartupProgress.set([submittedEvent]);
+      const targetDevice = deviceSerial || this.selectedDeviceSerial() || undefined;
       const payload: any = { goal, profile };
+      if (targetDevice) {
+        payload.device_serial = targetDevice;
+      }
       if (expectedOutput && expectedOutput.trim()) {
         payload.expected_output = expectedOutput.trim();
       }

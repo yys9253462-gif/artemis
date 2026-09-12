@@ -69,6 +69,14 @@ export class WorkspaceComponent implements OnInit {
       if (saved === 'flash' || saved === 'pro') {
         this.selectedProfile.set(saved);
       }
+      // Check if URL specifies a target device: e.g. /workspace?device=xxxx
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const dev = params.get('device');
+        if (dev) {
+          this.agentService.selectedDeviceSerial.set(dev);
+        }
+      }
     }
 
     // The global ⌘K/Ctrl+K shortcut is registered outside the Angular zone so

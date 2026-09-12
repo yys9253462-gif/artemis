@@ -490,17 +490,28 @@ limitations under the License.
                 <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                   <span class="material-symbols-outlined" style="font-size: 16px; color: #6366f1;">smartphone</span>
                   <strong style="font-size: 12px; color: #0f172a;" [title]="serial">机位 {{ idx + 1 }}</strong>
-                  <span style="font-size: 10px; color: #94a3b8; max-width: 110px; overflow: hidden; text-overflow: ellipsis;">{{ serial }}</span>
+                  <span style="font-size: 10px; color: #94a3b8; max-width: 80px; overflow: hidden; text-overflow: ellipsis;">{{ serial }}</span>
                 </div>
-                <button 
-                  type="button" 
-                  class="tab-selector-btn" 
-                  (click)="launchScrcpyDevice(serial)" 
-                  style="height: 20px; padding: 0 6px; font-size: 10px; background: #3b82f6; color: white;"
-                  title="为这台手机弹起独立的 60fps 硬件极速窗口"
-                >
-                  ⚡ 弹窗
-                </button>
+                <div style="display: flex; gap: 4px;">
+                  <a 
+                    [href]="'/workspace?device=' + encodeURIComponent(serial)" 
+                    target="_blank" 
+                    class="tab-selector-btn" 
+                    style="height: 20px; padding: 0 6px; font-size: 10px; background: #e0e7ff; color: #4338ca; text-decoration: none; display: inline-flex; align-items: center;"
+                    title="在全新独立 Web 网页中独占打开此手机"
+                  >
+                    ↗ 独立网页
+                  </a>
+                  <button 
+                    type="button" 
+                    class="tab-selector-btn" 
+                    (click)="launchScrcpyDevice(serial)" 
+                    style="height: 20px; padding: 0 6px; font-size: 10px; background: #3b82f6; color: white;"
+                    title="为这台手机弹起独立的 60fps 硬件极速窗口"
+                  >
+                    ⚡ 弹窗
+                  </button>
+                </div>
               </div>
 
               <!-- Interactive Touch Canvas -->

@@ -166,6 +166,14 @@ limitations under the License.
                     <span class="pill-label">Pro 深度</span>
                   </button>
                 </div>
+
+                <!-- Current Bound Target Device Pill if URL specified -->
+                @if (agentService.selectedDeviceSerial()) {
+                  <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; background: #e0e7ff; color: #4338ca; font-size: 11px; font-weight: 600;" [title]="'当前窗口绑定专属手机: ' + agentService.selectedDeviceSerial()">
+                    <span class="material-symbols-outlined" style="font-size: 13px;">smartphone</span>
+                    <span>专属机: {{ agentService.selectedDeviceSerial() }}</span>
+                  </span>
+                }
               </div>
             </div>
           </div>

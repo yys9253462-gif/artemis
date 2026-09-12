@@ -92,6 +92,10 @@ export class ChatInterfaceComponent {
   public isMouseDownOnScreenMap: Record<string, boolean> = {};
   private touchStartPosMap: Record<string, { x: number; y: number; t: number }> = {};
 
+  public encodeURIComponent(val: string): string {
+    return encodeURIComponent(val || '');
+  }
+
   public loadDevicesState(): void {
     fetch('/api/stream/devices-state')
       .then(res => res.json())
