@@ -112,7 +112,6 @@ async def launch_native_scrcpy(request: Request):
         f"--window-title=Artemis 极速真机操控 (60fps 零延迟){title_serial}",
         "-m", "1080",
         "--max-fps", "60",
-        "--stay-awake",
         "--always-on-top",
         "--keyboard=uhid",  # 模拟物理键盘，电脑输入法打字直接无缝输入到手机！
     ])
