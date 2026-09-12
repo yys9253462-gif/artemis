@@ -17,6 +17,7 @@
 Exposes real-time screen streaming and bidirectional user touch injection endpoints.
 """
 
+import asyncio
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
