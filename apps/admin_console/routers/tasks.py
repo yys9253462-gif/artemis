@@ -588,6 +588,10 @@ async def automation_webhook_trigger(request: Request):
     if not goal:
         raise HTTPException(status_code=400, detail="Webhook payload 必须包含 'goal' 或 'prompt'")
 
-    req = RunRequest(goal=goal, profile=profile, device_serial=device_serial)
-    res = await task_queue_service.enqueue_task(req)
-    return {"status": "enqueued", "goal": goal, "profile": profile}
+    res = await task_queue_service.enqueue_tasks(
+        goals=[goal],
+        profile=profile,
+        device_serial=device_serial,
+        ingress="webhook",
+    )
+    return {"status": "enqueued", "goal": goal, "profile": profile, "result": res}

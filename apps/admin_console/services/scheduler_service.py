@@ -213,17 +213,17 @@ class SchedulerService:
     async def _execute_task(self, task: ScheduledTask) -> bool:
         """Enqueue task into Artemis task queue service."""
         try:
-            from apps.admin_console.schemas.task_schema import RunRequest
             from apps.admin_console.services.task_queue_service import task_queue_service
 
             logger.info(f"[Scheduler] Executing scheduled automation task: '{task.name}' - Goal: {task.goal}")
-            req = RunRequest(
-                goal=task.goal,
+            # Enqueue into the existing unified queue service using enqueue_tasks
+            res = await task_queue_service.enqueue_tasks(
+                goals=[task.goal],
                 profile=task.profile,
                 device_serial=task.device_serial,
+                ingress="scheduler",
             )
-            # Enqueue into the existing unified queue service
-            res = await task_queue_service.enqueue_task(req)
+            logger.info(f"[Scheduler] Successfully enqueued task {task.task_id}: {res}")
             task.last_run_at = time.time()
             task.run_count += 1
             if task.schedule_type == "once":
@@ -233,7 +233,7 @@ class SchedulerService:
             self._save_tasks()
             return True
         except Exception as e:
-            logger.error(f"[Scheduler] Error triggering scheduled task {task.task_id}: {e}")
+            logger.error(f"[Scheduler] Error triggering scheduled task {task.task_id}: {e}", exc_info=True)
             return False
 
     async def _scheduler_loop(self):
