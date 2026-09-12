@@ -440,18 +440,30 @@ limitations under the License.
             type="text" 
             [(ngModel)]="phoneTextInput" 
             (keyup.enter)="sendText()" 
-            placeholder="发送文字到手机输入框..." 
+            placeholder="电脑键盘打字直投手机..." 
             style="flex: 1; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; outline: none;"
           />
           <button type="button" class="tab-selector-btn active" (click)="sendText()" style="height: 28px; padding: 0 10px; font-size: 12px;">发送</button>
         </div>
 
-        <!-- Swipe Shortcuts -->
-        <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <!-- Swipe & Shortcut Actions Grid -->
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; width: 100%; justify-content: center; max-width: 280px;">
           <button type="button" class="tab-selector-btn" (click)="sendSwipe('up')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">⬆ 上滑</button>
           <button type="button" class="tab-selector-btn" (click)="sendSwipe('down')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">⬇ 下滑</button>
           <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_VOLUME_UP')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">🔊 音量+</button>
           <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_VOLUME_DOWN')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">🔉 音量-</button>
+          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_ENTER')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">⏎ 回车确认</button>
+          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_DEL')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">⌫ 退格删除</button>
+          <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_NOTIFICATION')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">🔔 下拉通知</button>
+        </div>
+
+        <!-- Keyboard Shortcut Cheat-sheet -->
+        <div style="margin-top: 10px; width: 100%; max-width: 280px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; font-size: 11px; color: #64748b; line-height: 1.4;">
+          <div style="font-weight: 700; color: #0f172a; margin-bottom: 2px;">⚡ 极速窗口快捷键互通：</div>
+          • 电脑任意键盘打字直接无缝输入手机<br>
+          • 鼠标右键 = 手机返回键 (Back)<br>
+          • 鼠标中键 = 回到桌面 (Home)<br>
+          • <kbd style="background:#e2e8f0;padding:1px 4px;border-radius:3px;">Alt + s</kbd> = 任务切换 (App Switch)
         </div>
       </div>
     }

@@ -83,6 +83,7 @@ async def launch_native_scrcpy():
         "--max-fps", "60",
         "--stay-awake",
         "--always-on-top",
+        "--keyboard=uhid",  # 模拟物理键盘，电脑输入法打字直接无缝输入到手机！
     ])
     try:
         proc = await asyncio.create_subprocess_exec(
