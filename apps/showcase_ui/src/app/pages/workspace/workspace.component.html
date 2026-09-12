@@ -89,7 +89,7 @@ limitations under the License.
 
           <!-- Dormant / Capsule Peek View (Visible when mouse is away and input idle) -->
           <div class="capsule-peek-view">
-            <span class="capsule-placeholder">Start a new task...</span>
+            <span class="capsule-placeholder">输入任务指令开始执行...</span>
           </div>
 
           <!-- Expanded Full View Content (Visible on hover, focus, or text) -->
@@ -105,8 +105,8 @@ limitations under the License.
                   rows="1"
                   [disabled]="isSubmitting()"
                   [placeholder]="selectedProfile() === 'pro' 
-                    ? 'Pro: plans first, checks results and recovers from blocked steps. For long or complex tasks'
-                    : 'Flash: fast single-look loop for everyday app tasks'"
+                    ? 'Pro 深度模式：先规划目标，校验执行结果并具备自愈能力。适用于复杂长流程任务'
+                    : 'Flash 极速模式：高速单模型反应式执行，适合日常快速操作'"
                   class="dock-textarea"
                   spellcheck="false"
                 ></textarea>
@@ -115,7 +115,7 @@ limitations under the License.
               <!-- Clear Button (visible when text is entered) -->
               @if (taskInput.trim() && !isSubmitting()) {
                 <button type="button" class="dock-circle-btn btn-clear"
-                  (click)="clearInput($event)" title="Clear input text" aria-label="Clear input text">
+                  (click)="clearInput($event)" title="清空输入" aria-label="清空输入">
                   <span class="material-symbols-outlined">close</span>
                 </button>
               }
@@ -136,8 +136,8 @@ limitations under the License.
                 [class.has-content]="!!taskInput.trim()"
                 [disabled]="!taskInput.trim() || isSubmitting()"
                 (click)="submitTask()"
-                [title]="isSubmitting() ? 'Starting task...' : 'Start task (Enter)'"
-                aria-label="Start task"
+                [title]="isSubmitting() ? '正在下发任务...' : '下发任务 (Enter 回车执行)'"
+                aria-label="启动任务"
                 >
                 @if (isSubmitting()) {
                   <span class="material-symbols-outlined spinning-icon">sync</span>
@@ -152,18 +152,18 @@ limitations under the License.
             <div class="card-footer-row">
               <div class="footer-left-group">
                 <!-- Segmented Architecture Toggle (Flash / Pro) -->
-                <div class="model-profile-toggle" role="group" aria-label="Select Agent Architecture">
+                <div class="model-profile-toggle" role="group" aria-label="选择智能体执行模式">
                   <button type="button" class="profile-toggle-pill" [class.active]="selectedProfile() === 'flash'"
                     (mousedown)="$event.preventDefault()" (click)="setProfile('flash', $event)"
-                    title="Flash: fast single-look loop for everyday app tasks (3–5s/step)">
+                    title="Flash 模式：单模型反应式极速执行 (3–5s/步)">
                     <span class="material-symbols-outlined pill-icon icon-flash">bolt</span>
-                    <span class="pill-label">Flash</span>
+                    <span class="pill-label">Flash 极速</span>
                   </button>
                   <button type="button" class="profile-toggle-pill" [class.active]="selectedProfile() === 'pro'"
                     (mousedown)="$event.preventDefault()" (click)="setProfile('pro', $event)"
-                    title="Pro: plans first, checks results and recovers from blocked steps. For long or complex tasks (15–40s/step)">
+                    title="Pro 模式：深度规划、检查点验证与断言自愈 (15–40s/步)">
                     <span class="material-symbols-outlined pill-icon icon-pro">psychology</span>
-                    <span class="pill-label">Pro</span>
+                    <span class="pill-label">Pro 深度</span>
                   </button>
                 </div>
               </div>

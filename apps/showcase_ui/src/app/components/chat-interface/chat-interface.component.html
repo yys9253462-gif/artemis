@@ -66,11 +66,11 @@ limitations under the License.
     @if (agentService.activeTab() === 'tasks') {
       <!-- Active Queue Section -->
       <div class="queue-section-header">
-        <span class="material-symbols-outlined section-icon">bolt</span> Active Queue ({{ activeQueue().length }})
+        <span class="material-symbols-outlined section-icon">bolt</span> 当前活动队列 ({{ activeQueue().length }})
       </div>
       @if (activeQueue().length === 0) {
         <div class="empty-section-placeholder">
-          No active or queued tasks.
+          当前没有排队或运行中的任务。
         </div>
       }
       @for (session of activeQueue(); track trackSession($index, session)) {
@@ -85,11 +85,11 @@ limitations under the License.
               @if (getTaskStatus(session) === 'running') {
                 <span class="status-dot"></span>
               }
-              {{ getTaskStatus(session) | uppercase }}
+              {{ getTaskStatus(session) === 'running' ? '运行中' : (getTaskStatus(session) === 'paused' ? '已暂停' : (getTaskStatus(session) === 'completed' ? '已完成' : (getTaskStatus(session) === 'failed' ? '失败' : getTaskStatus(session)))) }}
             </span>
             <div class="task-card-header-actions">
               @if (getDeviceSerial(session)) {
-                <span class="task-device" [title]="'Device: ' + getDeviceSerial(session)">
+                <span class="task-device" [title]="'设备: ' + getDeviceSerial(session)">
                   <span class="material-symbols-outlined device-icon">phone_android</span>
                   <span class="device-name">{{ getDeviceSerial(session) }}</span>
                 </span>
@@ -103,8 +103,8 @@ limitations under the License.
                   type="button"
                   class="btn-stop-card"
                   (click)="stopTask(session.session_id, $event)"
-                  title="Stop this task"
-                  aria-label="Stop this task"
+                  title="停止该任务"
+                  aria-label="停止该任务"
                   >
                   <span class="material-symbols-outlined">stop_circle</span>
                 </button>
@@ -114,8 +114,8 @@ limitations under the License.
                   type="button"
                   class="btn-delete-card"
                   (click)="deleteTask(session.session_id, $event)"
-                  title="Delete this task"
-                  aria-label="Delete this task"
+                  title="删除该记录"
+                  aria-label="删除该记录"
                   [disabled]="isSubmitting()"
                   >
                   <span class="material-symbols-outlined">delete</span>
@@ -124,10 +124,10 @@ limitations under the License.
             </div>
           </div>
           <div class="task-goal" title="{{ session.initial_goal }}">
-            {{ session.initial_goal || 'Unnamed Task' }}
+            {{ session.initial_goal || '未命名任务' }}
           </div>
           <div class="task-card-footer">
-            <span class="task-id" [title]="session.session_id">ID: {{ session.session_id }}</span>
+            <span class="task-id" [title]="session.session_id">序号: {{ session.session_id }}</span>
             <span class="task-date">{{ session.start_time * 1000 | date:'MM/dd/yy' }}</span>
           </div>
         </div>
@@ -135,12 +135,12 @@ limitations under the License.
       <!-- Collapsible History Section -->
       <details class="history-section" open>
         <summary class="history-summary">
-          <span class="material-symbols-outlined section-icon">history</span> Past Runs & History ({{ historyTasks().length }})
+          <span class="material-symbols-outlined section-icon">history</span> 历史执行记录 ({{ historyTasks().length }})
         </summary>
         <div class="history-list-wrapper">
           @if (historyTasks().length === 0) {
             <div class="empty-section-placeholder">
-              No past tasks.
+              暂无历史任务。
             </div>
           }
           @for (session of historyTasks(); track trackSession($index, session)) {
@@ -155,11 +155,11 @@ limitations under the License.
                   @if (getTaskStatus(session) === 'running') {
                     <span class="status-dot"></span>
                   }
-                  {{ getTaskStatus(session) | uppercase }}
+                  {{ getTaskStatus(session) === 'completed' ? '已完成' : (getTaskStatus(session) === 'failed' ? '失败' : (getTaskStatus(session) === 'cancelled' ? '已取消' : getTaskStatus(session))) }}
                 </span>
                 <div class="task-card-header-actions">
                   @if (getDeviceSerial(session)) {
-                    <span class="task-device" [title]="'Device: ' + getDeviceSerial(session)">
+                    <span class="task-device" [title]="'设备: ' + getDeviceSerial(session)">
                       <span class="material-symbols-outlined device-icon">phone_android</span>
                       <span class="device-name">{{ getDeviceSerial(session) }}</span>
                     </span>

@@ -24,11 +24,11 @@ limitations under the License.
         class="vscode-tab-btn"
         [class.active]="isTaskDropdownOpen()"
         (click)="toggleTaskDropdown($event)"
-        title="Task Queue"
-        aria-label="Task Queue"
+        title="任务队列"
+        aria-label="任务队列"
         >
         <span class="material-symbols-outlined tab-icon">list_alt</span>
-        <span class="tab-label">Task Queue</span>
+        <span class="tab-label">任务队列</span>
       </button>
       <button
         #notesOrigin="cdkOverlayOrigin"
@@ -36,11 +36,11 @@ limitations under the License.
         class="vscode-tab-btn"
         [class.active]="isNotesDropdownOpen()"
         (click)="toggleNotesDropdown($event)"
-        title="Notes & Plans"
-        aria-label="Notes & Plans"
+        title="规划与笔记"
+        aria-label="规划与笔记"
         >
         <span class="material-symbols-outlined tab-icon">description</span>
-        <span class="tab-label">Notes & Plans</span>
+        <span class="tab-label">规划与笔记</span>
       </button>
     </div>
 
@@ -57,15 +57,15 @@ limitations under the License.
       <div class="vscode-dropdown-menu task-dropdown">
         <div class="popover-title-header">
           <span class="material-symbols-outlined">list_alt</span>
-          <span>Task Queue</span>
+          <span>任务队列</span>
         </div>
         <div class="dropdown-section-label">
           <span class="material-symbols-outlined icon-bolt">bolt</span>
-          <span>Active Queue ({{ activeQueue().length }})</span>
+          <span>活动队列 ({{ activeQueue().length }})</span>
         </div>
         @if (activeQueue().length === 0) {
           <div class="dropdown-empty-state">
-            No active or queued tasks
+            当前无活动或排队中的任务
           </div>
         }
         @for (session of activeQueue(); track trackSession($index, session)) {
@@ -200,7 +200,7 @@ limitations under the License.
       <div class="vscode-dropdown-menu notes-dropdown">
         <div class="popover-title-header">
           <span class="material-symbols-outlined">description</span>
-          <span>Notes & Plans</span>
+          <span>规划与笔记</span>
         </div>
         <!-- Notes Selector / Pills (Shown if there are note files) -->
         @if (noteKeys().length > 1) {
@@ -222,7 +222,7 @@ limitations under the License.
         @if (noteKeys().length === 0) {
           <div class="dropdown-empty-state">
             <span class="material-symbols-outlined empty-icon">description</span>
-            <span>No notes available for this session.</span>
+            <span>当前会话暂无笔记或规划内容。</span>
           </div>
         }
         <!-- Rich Notes Content Viewer -->

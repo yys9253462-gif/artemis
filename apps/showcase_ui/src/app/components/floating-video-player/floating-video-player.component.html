@@ -37,7 +37,7 @@ limitations under the License.
           {{ agentService.recordingPlaybackStatus() === 'live' ? 'sensors' : (agentService.playerMode() === 'steps' ? 'slideshow' : (agentService.recordingPlaybackStatus() === 'processing' ? 'progress_activity' : 'smart_display')) }}
         </span>
         <span class="header-title" [title]="agentService.activeVideoTitle()">
-          {{ agentService.recordingPlaybackStatus() === 'live' ? 'Live Device Screen' : (agentService.playerMode() === 'steps' ? ('Step Replay (' + (totalStepFrames() > 0 ? (activeStepIndex() + 1) + '/' + totalStepFrames() : '0') + ')') : (agentService.recordingPlaybackStatus() === 'processing' ? 'Preparing Recording' : (agentService.activeVideoTitle() || 'Screen Recording'))) }}
+          {{ agentService.recordingPlaybackStatus() === 'live' ? '实时手机画面 (Live)' : (agentService.playerMode() === 'steps' ? ('单步截屏回放 (' + (totalStepFrames() > 0 ? (activeStepIndex() + 1) + '/' + totalStepFrames() : '0') + ')') : (agentService.recordingPlaybackStatus() === 'processing' ? '正在准备录像回放' : (agentService.activeVideoTitle() || '屏幕录像'))) }}
         </span>
       </div>
       <div class="header-actions" (mousedown)="$event.stopPropagation()">
@@ -48,19 +48,19 @@ limitations under the License.
               class="mode-btn"
               [class.active]="agentService.playerMode() === 'video'"
               (click)="agentService.setPlayerMode('video')"
-              title="Video Recording"
+              title="完整视频录屏"
               >
               <span class="material-symbols-outlined mode-icon">videocam</span>
-              <span>Video</span>
+              <span>录像</span>
             </button>
             <button
               class="mode-btn"
               [class.active]="agentService.playerMode() === 'steps'"
               (click)="agentService.setPlayerMode('steps')"
-              title="Step Screenshot Replay"
+              title="单步截屏时序回放"
               >
               <span class="material-symbols-outlined mode-icon">slideshow</span>
-              <span>Steps</span>
+              <span>步骤截屏</span>
             </button>
           </div>
         }
@@ -68,8 +68,8 @@ limitations under the License.
         <button
           class="header-btn"
           (click)="toggleMinimize()"
-          [title]="agentService.isVideoMinimized() ? 'Restore' : 'Minimize'"
-          aria-label="Minimize"
+          [title]="agentService.isVideoMinimized() ? '还原' : '最小化'"
+          aria-label="最小化"
           >
           <span class="material-symbols-outlined">{{ agentService.isVideoMinimized() ? 'expand_less' : 'remove' }}</span>
         </button>
@@ -78,8 +78,8 @@ limitations under the License.
           <button
             class="header-btn"
             (click)="toggleTheater()"
-            [title]="isTheaterMode() ? 'Exit Theater' : 'Theater Mode'"
-            aria-label="Theater"
+            [title]="isTheaterMode() ? '退出影院模式' : '影院大屏模式'"
+            aria-label="影院模式"
             >
             <span class="material-symbols-outlined">{{ isTheaterMode() ? 'close_fullscreen' : 'open_in_full' }}</span>
           </button>
@@ -88,8 +88,8 @@ limitations under the License.
         <button
           class="header-btn close-btn"
           (click)="agentService.closeVideoPlayer()"
-          title="Close"
-          aria-label="Close"
+          title="关闭"
+          aria-label="关闭"
           >
           <span class="material-symbols-outlined">close</span>
         </button>
@@ -111,9 +111,9 @@ limitations under the License.
                 <div class="live-status-overlay">
                   <div class="live-badge">
                     <span class="pulse-dot"></span>
-                    <span>LIVE</span>
+                    <span>直播中</span>
                   </div>
-                  <button class="live-refresh-btn" (click)="retryLiveStream()" title="Refresh Live Stream">
+                  <button class="live-refresh-btn" (click)="retryLiveStream()" title="刷新实时画面">
                     <span class="material-symbols-outlined">refresh</span>
                   </button>
                 </div>
@@ -124,10 +124,10 @@ limitations under the License.
                 <div class="fallback-icon-wrap">
                   <span class="material-symbols-outlined fallback-icon">phonelink_off</span>
                 </div>
-                <h4 class="fallback-title">Device Stream Connecting</h4>
-                <p class="fallback-desc">Waiting for ADB device screen stream...</p>
+                <h4 class="fallback-title">正在连接设备画面</h4>
+                <p class="fallback-desc">正在等待 ADB 设备投屏信号流响应...</p>
                 <button class="retry-btn" (click)="retryLiveStream()">
-                  <span class="material-symbols-outlined">refresh</span> Reconnect
+                  <span class="material-symbols-outlined">refresh</span> 重新连接
                 </button>
               </div>
             }
@@ -138,7 +138,7 @@ limitations under the License.
             @if (agentService.playerMode() === 'video' && (agentService.recordingPlaybackStatus() === 'processing' || agentService.isVideoLoading())) {
               <div class="video-loading-state">
                 <span class="material-symbols-outlined spinning-icon">progress_activity</span>
-                <span>{{ agentService.recordingPlaybackMessage() || 'Preparing screen recording...' }}</span>
+                <span>{{ agentService.recordingPlaybackMessage() || '正在准备录像回放...' }}</span>
               </div>
             }
             <!-- Option A: STEP REPLAY VIEW (ACTIVE IN STEP MODE) -->
@@ -148,7 +148,7 @@ limitations under the License.
                 @if (agentService.recordingPlaybackStatus() === 'failed' || videoLoadError()) {
                   <div class="step-replay-notice">
                     <span class="material-symbols-outlined notice-icon">info</span>
-                    <span>Screen recording unavailable. Replaying step-by-step screenshots.</span>
+                    <span>屏幕录像暂不可用，正在以关键单步截屏形式回放。</span>
                   </div>
                 }
                 <!-- Step Image Viewport with Action Coordinates Overlay -->
