@@ -341,21 +341,19 @@ class AndroidAdbDriver(BaseDeviceDriver):
                 except Exception as e:
                     logger.debug(f"Clipboard paste fallback to ADB input: {e}")
 
-            # 2. Tier 2: Check if ADBKeyboard is currently active
+            # 2. Tier 2: Check or activate ADBKeyboard broadcast (AutoGLM SOTA Pattern)
             try:
-                default_ime = await asyncio.to_thread(
-                    self.device.shell, "settings get secure default_input_method"
+                b64_text = base64.b64encode(norm_text.encode("utf-8")).decode("utf-8")
+                # Try broadcasting ADB_INPUT_B64 directly
+                broadcast_res = await asyncio.to_thread(
+                    self.device.shell, f"am broadcast -a ADB_INPUT_B64 --es msg '{b64_text}'"
                 )
-                if "adbkeyboard" in str(default_ime).lower():
-                    b64_text = base64.b64encode(norm_text.encode("utf-8")).decode("utf-8")
-                    broadcast_cmd = f"am broadcast -a ADB_INPUT_B64 --es msg '{b64_text}'"
-                    await asyncio.to_thread(self.device.shell, broadcast_cmd)
+                if "result=0" in str(broadcast_res):
                     return True
             except Exception as e:
-                # ADBKeyboard probe/broadcast failed; fall through to native input.
-                logger.debug(f"ADBKeyboard IME path failed, falling back to ADB input: {e}")
+                logger.debug(f"ADBKeyboard broadcast failed: {e}")
 
-            # 3. Tier 3: Universal Native ADB input text fallback
+            # 3. Tier 3: Universal Native ADB input text fallback (escaped UTF-8)
             lines = norm_text.split("\n")
             for i, line in enumerate(lines):
                 if i > 0:

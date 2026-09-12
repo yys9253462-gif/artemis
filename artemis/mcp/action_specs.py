@@ -241,9 +241,38 @@ async def _wire_focus_and_clear_text(actuator: Any, a: dict[str, Any]) -> Action
     return await actuator.focus_and_clear_text(int(a["target"][0]), int(a["target"][1]))
 
 
+
+async def _wire_take_over(actuator: Any, a: dict[str, Any]) -> ActionResult:
+    return await actuator.take_over(a.get("message", "需要用户人工协助接管操作"))
+
+
 # --- The manifest --------------------------------------------------------------------
 
 _SPECS: tuple[ActionSpec, ...] = (
+    ActionSpec(
+        name="take_over",
+        operator=OperatorDialect(
+            description=(
+                "[ACTION] Request human user to take over the phone for sensitive verification,"
+                " such as slider captchas, SMS OTP codes, 2FA, biometric authentication, or password entry."
+                " Execution pauses until the user completes the manual action and resumes."
+            ),
+            params=(
+                ParamSpec(
+                    "message",
+                    str,
+                    "Reason and instructions for the user (e.g. '请在手机端滑动滑块验证码 / 请输入支付密码').",
+                    required=False,
+                    default="请在手机端协助完成安全验证",
+                ),
+            ),
+        ),
+        wire=WireDialect(
+            description="Request human takeover for sensitive verification.",
+            params=(ParamSpec("message", str, required=False, default="请协助完成验证"),),
+            bind=_wire_take_over,
+        ),
+    ),
     ActionSpec(
         name="click",
         operator=OperatorDialect(
@@ -690,6 +719,7 @@ OPERATOR_SHELL_ORDER: tuple[str, ...] = (
     "manage_app",
     "wait_for_delay",
     "long_press",
+    "take_over",
 )
 
 #: Exception wording per action; matches the historical executor `except` arms.

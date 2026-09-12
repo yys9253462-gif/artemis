@@ -402,6 +402,26 @@ class AdbActuator:
             )
         return ActionResult.failure("focus_and_clear_text", "Failed to erase text.")
 
+    async def take_over(self, message: str = "需要用户人工协助接管操作") -> ActionResult:
+        """Request human user to take over device for sensitive operations (captchas, 2FA, payments)."""
+        try:
+            from apps.admin_console.services.task_queue_service import task_queue_service
+
+            session_id = getattr(self.ctx, "session_id", None) or "active"
+            task_queue_service._broadcast_event(
+                "task_paused",
+                {
+                    "session_id": str(session_id),
+                    "error": f"【需要人工接管】{message}",
+                    "reason": "take_over",
+                    "message": message,
+                },
+            )
+            logger.info(f"[Actuator] Human take_over requested: {message}")
+        except Exception as e:
+            logger.warning(f"Failed to broadcast take_over pause: {e}")
+        return ActionResult.success("take_over", f"已请求用户人工接管: {message}")
+
     # --- Internal observation primitives ---------------------------------------------
 
     async def take_screenshot(self) -> str:
