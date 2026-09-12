@@ -1109,37 +1109,13 @@ async def mobile_diagnose(
       - `device`: 当前连接的 Android 设备详情（序列号、型号、Android版本、锁屏状态、无障碍服务状态等）。
       - `tasks`: 当前持有设备或正在排队的任务列表。
       - `fixes_applied`: 在开启 `attempt_fix=True` 时自动执行的修复动作与结果。
-    """
 
     Args:
-        attempt_fix: When true, applies the safe self-heals the ARTEMIS
-          console offers: remove device locks left by dead processes,
-          regenerate corrupted ADB RSA keys, restart the ADB server (only
-          when no device is ready and no task holds a device), and install,
-          upgrade or enable the Artemis accessibility helper APK on the idle
-          target device when it is missing, outdated or disabled. Then
-          re-runs the checks. Nothing else is changed.
-        device_serial: Optional serial the user wants to use; the report
-          then states explicitly whether that device is attached, authorized
-          and idle.
-        launch_avd: Name of an installed Android Virtual Device to boot in
-          the background (pick it from the `next_steps` guidance or the
-          android_adb facts `installed_avds`). Returns immediately; boot
-          takes 1-3 minutes, so call mobile_diagnose again (without
-          launch_avd) after about 60 seconds and watch `emulator.status`.
-          Never pass it while the status is starting/waiting_for_adb/booting.
-          Use it when no device is attached and an AVD exists instead of
-          asking the user to start an emulator.
-        verify_credentials: When true, checks every configured API key
-          against its provider over the network (about 12 seconds worst
-          case, keys stay on the server). Use it when tasks fail with
-          authentication, quota or model errors although the key check
-          passes. An invalid primary key makes the verdict "blocked".
-        probe_device: When true, drives the attached device end to end
-          (screenshot + UI hierarchy, about 20 seconds) to prove a task can
-          really start. Use it when the checks pass but tasks still fail on
-          the device, or the screen stays black. A failed probe makes the
-          verdict "blocked" and lists the fix.
+        attempt_fix: 是否自动尝试执行安全修复。
+        device_serial: 指定需要检查的目标设备序列号。
+        launch_avd: 在后台启动指定名称的虚拟设备 (AVD)。
+        verify_credentials: 是否在线实时测试大模型 API 密钥。
+        probe_device: 是否对设备执行全链路端到端感知探测。
     """
     fixes_applied: list[dict[str, Any]] = []
     requested_device = device_serial.strip() if device_serial and device_serial.strip() else None
