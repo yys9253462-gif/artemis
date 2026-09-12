@@ -1349,65 +1349,129 @@
                 <!-- Method 3: Wireless ADB -->
                 @if (activeAdbGuideTab() === 'wifi') {
                   <div class="method-details-panel">
-                    <div class="wifi-guide-intro">
-                      <span class="material-symbols-outlined intro-icon">wifi</span>
-                      <span>Connect your phone and computer on the same Wi-Fi network:</span>
+                    <div class="wifi-guide-intro" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                      <div style="display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-outlined intro-icon">wifi</span>
+                        <span>确保手机与电脑处于同一局域网 Wi-Fi 下：</span>
+                      </div>
+
+                      <!-- Toggle between Wireless Pairing Mode (Android 11+) vs Direct Connect (Android 10 / 5555) -->
+                      <div class="os-selector-pills" style="margin: 0;">
+                        <button type="button" class="os-pill" [class.active]="wifiPairMode() === 'pair'"
+                          (click)="wifiPairMode.set('pair')">
+                          <span class="material-symbols-outlined" style="font-size: 13px; vertical-align: middle;">phonelink_setup</span>
+                          配对码绑定 (Android 11+)
+                        </button>
+                        <button type="button" class="os-pill" [class.active]="wifiPairMode() === 'connect'"
+                          (click)="wifiPairMode.set('connect')">
+                          <span class="material-symbols-outlined" style="font-size: 13px; vertical-align: middle;">link</span>
+                          普通直连 (5555端口)
+                        </button>
+                      </div>
                     </div>
                   
                     <!-- Interactive Wi-Fi Connection Generator Box -->
                     <div class="wifi-interactive-box">
-                      <div class="wifi-form-row">
-                        <div class="wifi-input-col ip-col">
-                          <label class="wifi-label">Device IP Address</label>
-                          <div class="wifi-input-wrap">
-                            <span class="material-symbols-outlined wrap-icon">router</span>
-                            <input type="text" class="wifi-input" [ngModel]="wifiHost()" (ngModelChange)="wifiHost.set($event)"
-                              placeholder="e.g. 192.168.1.108" spellcheck="false" />
+                      <!-- Mode A: Android 11+ Pairing Code Mode -->
+                      @if (wifiPairMode() === 'pair') {
+                        <div class="wifi-form-row" style="flex-wrap: wrap; gap: 10px;">
+                          <div class="wifi-input-col ip-col" style="flex: 2; min-width: 160px;">
+                            <label class="wifi-label">手机 IP 地址</label>
+                            <div class="wifi-input-wrap">
+                              <span class="material-symbols-outlined wrap-icon">router</span>
+                              <input type="text" class="wifi-input" [ngModel]="wifiHost()" (ngModelChange)="wifiHost.set($event)"
+                                placeholder="如 192.168.5.17" spellcheck="false" />
+                            </div>
+                          </div>
+
+                          <div class="wifi-input-col port-col" style="flex: 1.2; min-width: 110px;">
+                            <label class="wifi-label">配对弹窗端口</label>
+                            <div class="wifi-input-wrap">
+                              <span class="material-symbols-outlined wrap-icon">tag</span>
+                              <input type="text" class="wifi-input" [ngModel]="wifiPairPort()" (ngModelChange)="wifiPairPort.set($event)"
+                                placeholder="如 39665" spellcheck="false" />
+                            </div>
+                          </div>
+
+                          <div class="wifi-input-col code-col" style="flex: 1.2; min-width: 110px;">
+                            <label class="wifi-label">6位配对码</label>
+                            <div class="wifi-input-wrap">
+                              <span class="material-symbols-outlined wrap-icon">key</span>
+                              <input type="text" class="wifi-input" [ngModel]="wifiPairCode()" (ngModelChange)="wifiPairCode.set($event)"
+                                placeholder="如 123456" spellcheck="false" />
+                            </div>
+                          </div>
+
+                          <div class="wifi-btn-col" style="flex-shrink: 0;">
+                            <button type="button" class="btn-wifi-connect" [disabled]="isPairingWifi() || isRemoteAdbServer() || !wifiHost().trim() || !wifiPairPort().trim() || !wifiPairCode().trim()"
+                              (click)="pairAndConnectWifiDevice()" style="background: #6366f1;">
+                              @if (isPairingWifi()) {
+                                <span class="material-symbols-outlined spinning">sync</span>
+                                <span>绑定中...</span>
+                              } @else {
+                                <span class="material-symbols-outlined">phonelink_setup</span>
+                                <span>配对并连接</span>
+                              }
+                            </button>
                           </div>
                         </div>
-                  
-                        <div class="wifi-input-col port-col">
-                          <label class="wifi-label">Port</label>
-                          <div class="wifi-input-wrap">
-                            <span class="material-symbols-outlined wrap-icon">tag</span>
-                            <input type="text" class="wifi-input" [ngModel]="wifiPort()" (ngModelChange)="wifiPort.set($event)"
-                              placeholder="5555" spellcheck="false" />
+                      }
+
+                      <!-- Mode B: Direct Connect Mode -->
+                      @if (wifiPairMode() === 'connect') {
+                        <div class="wifi-form-row">
+                          <div class="wifi-input-col ip-col">
+                            <label class="wifi-label">Device IP Address</label>
+                            <div class="wifi-input-wrap">
+                              <span class="material-symbols-outlined wrap-icon">router</span>
+                              <input type="text" class="wifi-input" [ngModel]="wifiHost()" (ngModelChange)="wifiHost.set($event)"
+                                placeholder="e.g. 192.168.1.108" spellcheck="false" />
+                            </div>
+                          </div>
+                    
+                          <div class="wifi-input-col port-col">
+                            <label class="wifi-label">Port</label>
+                            <div class="wifi-input-wrap">
+                              <span class="material-symbols-outlined wrap-icon">tag</span>
+                              <input type="text" class="wifi-input" [ngModel]="wifiPort()" (ngModelChange)="wifiPort.set($event)"
+                                placeholder="5555" spellcheck="false" />
+                            </div>
+                          </div>
+                    
+                          <div class="wifi-btn-col">
+                            <button type="button" class="btn-wifi-connect" [disabled]="isConnectingWifi() || isRemoteAdbServer() || !wifiHost().trim()"
+                              (click)="connectWifiDevice()">
+                              @if (isConnectingWifi()) {
+                              <span class="material-symbols-outlined spinning">sync</span>
+                              <span>Connecting...</span>
+                              } @else {
+                              <span class="material-symbols-outlined">bolt</span>
+                              <span>Connect</span>
+                              }
+                            </button>
                           </div>
                         </div>
-                  
-                        <div class="wifi-btn-col">
-                          <button type="button" class="btn-wifi-connect" [disabled]="isConnectingWifi() || isRemoteAdbServer() || !wifiHost().trim()"
-                            (click)="connectWifiDevice()">
-                            @if (isConnectingWifi()) {
-                            <span class="material-symbols-outlined spinning">sync</span>
-                            <span>Connecting...</span>
-                            } @else {
-                            <span class="material-symbols-outlined">bolt</span>
-                            <span>Connect</span>
-                            }
-                          </button>
-                        </div>
-                        </div>
+                      }
                         
-                        @if (wifiConnectMessage()) {
-                        <div class="wifi-status-alert success">
-                          <span class="material-symbols-outlined">check_circle</span>
-                          <span>{{ wifiConnectMessage() }}</span>
-                        </div>
-                        }
-                        @if (wifiConnectError()) {
-                        <div class="wifi-status-alert error">
-                          <span class="material-symbols-outlined">error</span>
-                          <span>{{ wifiConnectError() }}</span>
-                        </div>
-                        }
+                      @if (wifiConnectMessage()) {
+                      <div class="wifi-status-alert success">
+                        <span class="material-symbols-outlined">check_circle</span>
+                        <span>{{ wifiConnectMessage() }}</span>
+                      </div>
+                      }
+                      @if (wifiConnectError()) {
+                      <div class="wifi-status-alert error">
+                        <span class="material-symbols-outlined">error</span>
+                        <span>{{ wifiConnectError() }}</span>
+                      </div>
+                      }
                     </div>
                   <div class="info-callout-box">
                     <span class="material-symbols-outlined callout-icon">help_outline</span>
                     <div class="callout-text">
-                      Find IP & port in phone <strong>Settings > Developer Options > Wireless Debugging</strong>.
-                      </div>
+                      手机打开 <strong>设置 > 开发者选项 > 无线调试 > 使用配对码配对设备</strong>，将弹窗上的【配对端口】与【6位配对码】填入即可一键绑定。
                     </div>
+                  </div>
                   </div>
                 }
 

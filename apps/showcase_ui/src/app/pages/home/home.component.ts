@@ -162,6 +162,12 @@ export class HomeComponent implements OnInit, OnDestroy {
   public adbRestartFeedback = signal<string | null>(null);
   public showConnectionMethods = signal<boolean>(false);
 
+  // Wireless Debugging Pairing Code signals (Android 11+)
+  public wifiPairMode = signal<'connect' | 'pair'>('pair');
+  public wifiPairPort = signal<string>('');
+  public wifiPairCode = signal<string>('');
+  public isPairingWifi = signal<boolean>(false);
+
   // ADB server endpoint connection state
   public remoteAdbHost = signal<string>('127.0.0.1');
   public remoteAdbPort = signal<string>('5038');
@@ -874,6 +880,59 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.wifiConnectError.set(err?.error?.detail || 'Failed to connect. Please check adb connection.');
       }
     });
+  }
+
+  public pairAndConnectWifiDevice(): void {
+    if (this.isRemoteAdbServer()) {
+      this.wifiConnectError.set('Switch to local ADB before pairing a Wireless ADB device.');
+      return;
+    }
+    const host = this.wifiHost().trim();
+    const pairPort = this.wifiPairPort().trim();
+    const code = this.wifiPairCode().trim();
+    const connectPort = this.wifiPort().trim() || undefined;
+
+    if (!host) {
+      this.wifiConnectError.set('请输入手机的 IP 地址。');
+      return;
+    }
+    if (!pairPort) {
+      this.wifiConnectError.set('请输入手机配对弹窗中的【配对端口】。');
+      return;
+    }
+    if (!code) {
+      this.wifiConnectError.set('请输入手机配对弹窗中的【6位配对码】。');
+      return;
+    }
+
+    this.isPairingWifi.set(true);
+    this.wifiConnectError.set(null);
+    this.wifiConnectMessage.set('正在配对并自动连接手机，请稍候...');
+
+    fetch('/api/wifi-adb/pair', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        address: `${host}:${pairPort}`,
+        code: code,
+        connect_port: connectPort
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        this.isPairingWifi.set(false);
+        if (data.success) {
+          this.wifiConnectMessage.set('🎉 配对成功！已自动完成无线调试连接！');
+          this.systemService.fetchReadiness(true, true).subscribe();
+          setTimeout(() => this.wifiConnectMessage.set(null), 5000);
+        } else {
+          this.wifiConnectError.set('配对失败: ' + (data.output || '请检查配对码是否过期或端口是否正确'));
+        }
+      })
+      .catch(err => {
+        this.isPairingWifi.set(false);
+        this.wifiConnectError.set('网络异常: ' + err.message);
+      });
   }
 
   public connectRemoteAdbServer(): void {
