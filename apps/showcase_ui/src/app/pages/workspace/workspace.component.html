@@ -132,20 +132,22 @@ limitations under the License.
               }
 
               <!-- Send Button -->
-              <button type="button" class="dock-circle-btn btn-send"
-                [class.has-content]="!!taskInput.trim()"
-                [disabled]="!taskInput.trim() || isSubmitting()"
-                (click)="submitTask()"
-                [title]="isSubmitting() ? '正在下发任务...' : '下发任务 (Enter 回车执行)'"
-                aria-label="启动任务"
-                >
-                @if (isSubmitting()) {
-                  <span class="material-symbols-outlined spinning-icon">sync</span>
-                }
-                @if (!isSubmitting()) {
-                  <span class="material-symbols-outlined">arrow_upward</span>
-                }
-              </button>
+              @if (!isTaskRunning()) {
+                <button type="button" class="dock-circle-btn btn-send"
+                  [class.has-content]="!!taskInput.trim()"
+                  [disabled]="!taskInput.trim() || isSubmitting()"
+                  (click)="submitTask()"
+                  [title]="isSubmitting() ? '正在下发任务...' : '下发任务 (Enter 回车执行)'"
+                  aria-label="启动任务"
+                  >
+                  @if (isSubmitting()) {
+                    <span class="material-symbols-outlined spinning-icon">sync</span>
+                  }
+                  @if (!isSubmitting()) {
+                    <span class="material-symbols-outlined">arrow_upward</span>
+                  }
+                </button>
+              }
             </div>
 
             <!-- Bottom Segmented Controls Row -->

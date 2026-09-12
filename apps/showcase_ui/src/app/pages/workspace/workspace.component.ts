@@ -105,9 +105,16 @@ export class WorkspaceComponent implements OnInit {
 
   /**
    * Computed boolean whether the currently viewed task is actively running or paused.
-   * Only displays the stop/cancel button when inspecting an active task.
+   * Only displays the stop/cancel button when inspecting an active task that belongs to the current target device.
    */
   public isTaskRunning = computed(() => {
+    const boundDev = this.agentService.selectedDeviceSerial();
+    if (boundDev) {
+      const curSession = this.agentService.currentSession();
+      if (curSession && curSession.device_serial && curSession.device_serial !== boundDev) {
+        return false;
+      }
+    }
     return this.agentService.isCurrentSessionRunning();
   });
 
