@@ -70,8 +70,9 @@ async def inject_device_touch(request: Request):
 
 @router.post("/api/stream/launch-scrcpy")
 async def launch_native_scrcpy():
-    """Launch hardware-accelerated, ultra-low latency (<30ms) 60fps Scrcpy desktop window with mouse & keyboard control."""
+    """Launch hardware-accelerated, ultra-low latency (<30ms) 60fps Scrcpy desktop window with companion hardware dock bar."""
     from artemis.toolchain import find_scrcpy
+    from apps.admin_console.services.scrcpy_dock import launch_companion_dock
     scrcpy_bin = find_scrcpy()
     serial = await device_stream_service.get_device_serial()
     cmd = [scrcpy_bin]
@@ -91,7 +92,9 @@ async def launch_native_scrcpy():
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL
         )
-        return JSONResponse({"success": True, "pid": proc.pid, "message": "Scrcpy 极速窗口已开启"})
+        # Launch the companion physical dock bar attached right below the scrcpy window
+        launch_companion_dock(serial=serial, window_keyword="Artemis")
+        return JSONResponse({"success": True, "pid": proc.pid, "message": "Scrcpy 极速窗口与实体导航控制栏已开启"})
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)})
 
