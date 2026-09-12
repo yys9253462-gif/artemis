@@ -33,7 +33,15 @@ limitations under the License.
         (click)="agentService.activeTab.set('screen')"
         >
         <span class="material-symbols-outlined tab-icon">screenshot_monitor</span>
-        <span class="tab-text">实时投屏触控</span>
+        <span class="tab-text">实时投屏</span>
+      </button>
+      <button
+        class="tab-selector-btn"
+        [class.active]="agentService.activeTab() === 'scheduler'"
+        (click)="agentService.activeTab.set('scheduler'); loadScheduledTasks()"
+        >
+        <span class="material-symbols-outlined tab-icon">schedule</span>
+        <span class="tab-text">定时调度</span>
       </button>
       <button
         class="tab-selector-btn"
@@ -41,7 +49,7 @@ limitations under the License.
         (click)="agentService.activeTab.set('notes')"
         >
         <span class="material-symbols-outlined tab-icon">description</span>
-        <span class="tab-text">规划与笔记</span>
+        <span class="tab-text">规划笔记</span>
       </button>
     </div>
 
@@ -432,6 +440,70 @@ limitations under the License.
           <button type="button" class="tab-selector-btn" (click)="sendSwipe('down')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">⬇ 下滑</button>
           <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_VOLUME_UP')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">🔊 音量+</button>
           <button type="button" class="tab-selector-btn" (click)="sendKey('KEYCODE_VOLUME_DOWN')" style="height: 26px; padding: 0 8px; font-size: 11px; background: #f8fafc;">🔉 音量-</button>
+        </div>
+      </div>
+    }
+
+    <!-- ⏰ Scheduler & Automation Tab Content in Workspace -->
+    @if (agentService.activeTab() === 'scheduler') {
+      <div class="scheduler-tab-panel" style="padding: 16px; height: 100%; box-sizing: border-box; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <span style="font-weight: 700; font-size: 14px; color: #0f172a;">⏰ 定时与周期自动化计划</span>
+          <button type="button" class="tab-selector-btn active" (click)="isCreatingScheduledTask.set(!isCreatingScheduledTask())" style="height: 28px; padding: 0 10px; font-size: 12px;">
+            {{ isCreatingScheduledTask() ? '取消' : '➕ 新建计划' }}
+          </button>
+        </div>
+
+        <!-- Create Scheduled Task Form -->
+        @if (isCreatingScheduledTask()) {
+          <div style="background: #f8fafc; border: 1px solid #cbd5e0; border-radius: 8px; padding: 12px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
+            <input type="text" [(ngModel)]="newSchedName" placeholder="计划名称 (如 每日早报 / 自动打卡)" style="padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; outline: none;"/>
+            <textarea [(ngModel)]="newSchedGoal" placeholder="执行指令 (如 打开网易云音乐播放歌曲)..." style="padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; outline: none; height: 50px; font-family: inherit;"></textarea>
+            <div style="display: flex; gap: 8px;">
+              <select [(ngModel)]="newSchedType" style="flex: 1; padding: 6px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px;">
+                <option value="daily">每天固定时间</option>
+                <option value="interval">间隔分钟</option>
+                <option value="once">指定时间</option>
+              </select>
+              <input type="text" [(ngModel)]="newSchedTime" placeholder="08:30" style="flex: 1; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 12px; outline: none;"/>
+              <button type="button" class="tab-selector-btn active" (click)="saveScheduledTask()" style="height: 30px; padding: 0 12px; font-size: 12px;">保存开启</button>
+            </div>
+          </div>
+        }
+
+        <!-- Tasks List -->
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          @if (scheduledTasks().length === 0) {
+            <div style="color: #94a3b8; font-size: 12px; text-align: center; padding: 20px 0;">
+              暂无配置的定时任务。点击右上角【新建计划】设置自动执行！
+            </div>
+          }
+          @for (task of scheduledTasks(); track task.task_id) {
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <div style="font-weight: 700; font-size: 13px; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                  <span>{{ task.name }}</span>
+                  <span style="font-size: 11px; padding: 1px 5px; border-radius: 4px; background: #e0f2fe; color: #0284c7;">
+                    {{ task.schedule_type === 'daily' ? '每天 ' + task.schedule_time : ('每隔 ' + task.schedule_time + ' 分钟') }}
+                  </span>
+                </div>
+                <span style="font-size: 11px; font-weight: bold;" [style.color]="task.enabled ? '#10b981' : '#94a3b8'">
+                  ● {{ task.enabled ? '运行中' : '已暂停' }}
+                </span>
+              </div>
+              <div style="font-size: 12px; color: #334155; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ task.goal }}
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94a3b8;">
+                <span>已执行 {{ task.run_count }} 次</span>
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" class="tab-selector-btn" (click)="triggerScheduledTask(task.task_id)" style="height: 24px; padding: 0 8px; font-size: 11px; background: #f1f5f9;">⚡ 触发</button>
+                  <button type="button" class="tab-selector-btn" (click)="toggleScheduledTask(task.task_id, !task.enabled)" style="height: 24px; padding: 0 8px; font-size: 11px;" [style.background]="task.enabled ? '#fef3c7' : '#dcfce7'">{{ task.enabled ? '停用' : '启用' }}</button>
+                  <button type="button" class="tab-selector-btn" (click)="deleteScheduledTask(task.task_id)" style="height: 24px; padding: 0 8px; font-size: 11px; color: #ef4444; background: #fee2e2;">删除</button>
+                </div>
+              </div>
+            </div>
+          }
         </div>
       </div>
     }

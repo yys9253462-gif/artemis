@@ -29,6 +29,7 @@ try:
     from admin_console.services.model_service import model_service
     from admin_console.services.task_preset_catalog import task_recommendation_engine
     from admin_console.services.task_queue_service import task_queue_service
+    from admin_console.services.scheduler_service import scheduler_service
 except ImportError:
     from apps.admin_console.core.state import state
     from apps.admin_console.database.repositories.session_repository import session_repo
@@ -37,6 +38,7 @@ except ImportError:
     from apps.admin_console.services.model_service import model_service
     from apps.admin_console.services.task_preset_catalog import task_recommendation_engine
     from apps.admin_console.services.task_queue_service import task_queue_service
+    from apps.admin_console.services.scheduler_service import scheduler_service
 
 
 router = APIRouter(tags=["tasks"])
@@ -515,3 +517,77 @@ async def stream_events(session_id: str = "active", client: str | None = None):
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# 定时任务与自动化调度管理接口 (Scheduler & Automation Endpoints)
+# ---------------------------------------------------------------------------
+
+@router.get("/api/scheduler/tasks")
+async def list_scheduled_tasks():
+    """获取所有已配置的定时与周期性自动化任务。"""
+    tasks = scheduler_service.list_tasks()
+    return {"tasks": tasks}
+
+
+@router.post("/api/scheduler/tasks")
+async def create_scheduled_task(request: Request):
+    """新建一个定时自动化任务。"""
+    body = await request.json()
+    name = body.get("name", "未命名自动化任务")
+    goal = body.get("goal", "")
+    schedule_type = body.get("schedule_type", "daily")
+    schedule_time = body.get("schedule_time", "08:30")
+    profile = body.get("profile", "flash")
+    device_serial = body.get("device_serial")
+
+    if not goal:
+        raise HTTPException(status_code=400, detail="任务目标 (goal) 不能为空")
+
+    task = scheduler_service.add_task(
+        name=name,
+        goal=goal,
+        schedule_type=schedule_type,
+        schedule_time=schedule_time,
+        profile=profile,
+        device_serial=device_serial,
+    )
+    return {"success": True, "task": task}
+
+
+@router.delete("/api/scheduler/tasks/{task_id}")
+async def delete_scheduled_task(task_id: str):
+    """删除指定的定时任务。"""
+    success = scheduler_service.delete_task(task_id)
+    return {"success": success}
+
+
+@router.post("/api/scheduler/tasks/{task_id}/toggle")
+async def toggle_scheduled_task(task_id: str, request: Request):
+    """启用或禁用指定的定时任务。"""
+    body = await request.json()
+    enabled = body.get("enabled", True)
+    success = scheduler_service.toggle_task(task_id, enabled)
+    return {"success": success}
+
+
+@router.post("/api/scheduler/tasks/{task_id}/trigger")
+async def trigger_scheduled_task(task_id: str):
+    """立即手动触发执行一次定时任务。"""
+    success = await scheduler_service.trigger_task_immediately(task_id)
+    return {"success": success}
+
+
+@router.post("/api/automation/webhook")
+async def automation_webhook_trigger(request: Request):
+    """外部 Webhook 触发器：支持飞书/微信机器人或任何第三方服务远程唤醒手机执行。"""
+    body = await request.json()
+    goal = body.get("goal") or body.get("prompt")
+    profile = body.get("profile", "flash")
+    device_serial = body.get("device_serial")
+    if not goal:
+        raise HTTPException(status_code=400, detail="Webhook payload 必须包含 'goal' 或 'prompt'")
+
+    req = RunRequest(goal=goal, profile=profile, device_serial=device_serial)
+    res = await task_queue_service.enqueue_task(req)
+    return {"status": "enqueued", "goal": goal, "profile": profile}

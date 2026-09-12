@@ -284,6 +284,7 @@
             <button class="tab-btn" onclick="switchTab('replay')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; color: #718096; transition: color 0.2s, border-color 0.2s; outline: none;">🔄 动作回放 (Replay)</button>
             <button class="tab-btn" onclick="switchTab('live-control')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; color: #718096; transition: color 0.2s, border-color 0.2s; outline: none;">📱 实时投屏与触控</button>
             <button class="tab-btn" onclick="switchTab('wifi-adb')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; color: #718096; transition: color 0.2s, border-color 0.2s; outline: none;">📶 无线 ADB 管理</button>
+            <button class="tab-btn" onclick="switchTab('scheduler')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; color: #718096; transition: color 0.2s, border-color 0.2s; outline: none;">⏰ 定时与自动化</button>
             
             <div style="margin-left: auto; display: flex; gap: 8px;">
                 <button class="refresh-btn" style="margin-bottom: 0; background-color: #38bdf8; color: #0f172a; font-weight: bold;" onclick="openNotesModal()">📚 查看执行笔记</button>
@@ -416,6 +417,81 @@
                         <div style="color: #94a3b8; padding: 10px 0;">点击右上角【一键局域网扫描连接】即可自动探测并接入局域网设备。</div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- ⏰ Scheduled Automation Tasks Panel -->
+        <div id="scheduler-container" style="display: none; height: calc(100vh - 180px); overflow-y: auto; padding-right: 10px;">
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); max-width: 860px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <h2 style="margin: 0; color: #0f172a; font-size: 1.25rem;">⏰ 定时任务与自动化调度中心</h2>
+                        <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.85rem;">支持每天定时、固定间隔轮询以及外部 Webhook 远程调用手机执行</p>
+                    </div>
+                    <button class="refresh-btn" style="margin: 0; background-color: #3b82f6;" onclick="showNewScheduledTaskModal()">➕ 新建定时任务</button>
+                </div>
+
+                <!-- Webhook Inbound Guide -->
+                <div style="margin-bottom: 20px; padding: 14px 18px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569;">
+                    <div style="font-weight: bold; color: #0f172a; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                        <span>🔗 外部 Webhook 触发地址：</span>
+                        <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;">POST http://localhost:8000/api/automation/webhook</code>
+                    </div>
+                    <div>第三方平台（如飞书机器人、微信公众号、自动化脚本）向此地址发送 <code>{{"\"goal\": \"打开网易云音乐播放歌曲\""}}</code> 即可全天候远程自动拉起手机执行！</div>
+                </div>
+
+                <!-- Scheduled Tasks List -->
+                <div>
+                    <h4 style="margin: 0 0 12px 0; color: #334155;">已配置的定时计划：</h4>
+                    <div id="scheduled-tasks-list" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="color: #94a3b8; padding: 10px 0;">正在加载定时任务列表...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Scheduled Task Modal -->
+    <div id="create-task-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
+        <div style="background-color: white; width: 500px; max-width: 90%; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #cbd5e0;">
+            <div style="padding: 16px 20px; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; color: #0f172a; font-size: 1.1rem; font-weight: 600;">➕ 创建定时自动化计划</h3>
+                <button onclick="closeNewScheduledTaskModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; color: #334155; margin-bottom: 4px;">任务名称：</label>
+                    <input type="text" id="sched-name-input" placeholder="例如：每日早报播报 / 晚间自动打卡" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; outline: none;"/>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; color: #334155; margin-bottom: 4px;">执行目标 (自然语言指令)：</label>
+                    <textarea id="sched-goal-input" placeholder="输入具体的手机操作指令..." style="width: 100%; height: 60px; padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; outline: none; font-family: inherit;"></textarea>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1;">
+                        <label style="display: block; font-weight: 600; font-size: 0.85rem; color: #334155; margin-bottom: 4px;">调度周期：</label>
+                        <select id="sched-type-select" onchange="onSchedTypeChange()" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; outline: none;">
+                            <option value="daily">每天固定时间</option>
+                            <option value="interval">固定间隔分钟</option>
+                            <option value="once">指定单次时间</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label id="sched-time-label" style="display: block; font-weight: 600; font-size: 0.85rem; color: #334155; margin-bottom: 4px;">执行时间 (HH:MM)：</label>
+                        <input type="text" id="sched-time-input" value="08:30" placeholder="08:30" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; outline: none;"/>
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; font-size: 0.85rem; color: #334155; margin-bottom: 4px;">运行模式：</label>
+                    <select id="sched-profile-select" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; outline: none;">
+                        <option value="flash">⚡ Flash 极速模式 (响应快速)</option>
+                        <option value="pro">🚀 Pro 深度规划模式 (高自愈)</option>
+                    </select>
+                </div>
+            </div>
+            <div style="padding: 12px 20px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="refresh-btn" style="margin: 0; background-color: #94a3b8;" onclick="closeNewScheduledTaskModal()">取消</button>
+                <button class="refresh-btn" style="margin: 0; background-color: #3b82f6;" onclick="saveNewScheduledTask()">保存并开启</button>
             </div>
         </div>
     </div>
@@ -1362,12 +1438,14 @@
             const replayWrapper = document.getElementById('replay-container-wrapper');
             const liveControlWrapper = document.getElementById('live-control-container');
             const wifiAdbWrapper = document.getElementById('wifi-adb-container');
+            const schedulerWrapper = document.getElementById('scheduler-container');
             
             stepsContainer.style.display = (tabName === 'steps') ? 'block' : 'none';
             tracesWrapper.style.display = (tabName === 'traces') ? 'block' : 'none';
             replayWrapper.style.display = (tabName === 'replay') ? 'block' : 'none';
             liveControlWrapper.style.display = (tabName === 'live-control') ? 'block' : 'none';
             wifiAdbWrapper.style.display = (tabName === 'wifi-adb') ? 'block' : 'none';
+            schedulerWrapper.style.display = (tabName === 'scheduler') ? 'block' : 'none';
 
             if (tabName === 'steps') {
                 loadSteps();
@@ -1379,6 +1457,8 @@
                 initLiveScreenStream();
             } else if (tabName === 'wifi-adb') {
                 refreshWifiAdbDevices();
+            } else if (tabName === 'scheduler') {
+                loadScheduledTasks();
             }
         }
 
@@ -3978,6 +4058,151 @@
                 refreshWifiAdbDevices();
             } catch (err) {
                 listDiv.innerHTML = `<div style="color: #ef4444;">自动扫描失败: ${err.message}</div>`;
+            }
+        }
+
+        // ---------------------------------------------------------------------------
+        // ⏰ Scheduled Tasks & Automation Manager
+        // ---------------------------------------------------------------------------
+        function showNewScheduledTaskModal() {
+            document.getElementById('create-task-modal').style.display = 'flex';
+        }
+
+        function closeNewScheduledTaskModal() {
+            document.getElementById('create-task-modal').style.display = 'none';
+        }
+
+        function onSchedTypeChange() {
+            const type = document.getElementById('sched-type-select').value;
+            const label = document.getElementById('sched-time-label');
+            const input = document.getElementById('sched-time-input');
+            if (type === 'daily') {
+                label.innerText = '执行时间 (HH:MM)：';
+                input.placeholder = '08:30';
+                input.value = '08:30';
+            } else if (type === 'interval') {
+                label.innerText = '间隔时长 (分钟)：';
+                input.placeholder = '60';
+                input.value = '60';
+            } else if (type === 'once') {
+                label.innerText = '执行时间 (ISO格式)：';
+                const nextHour = new Date(Date.now() + 3600000).toISOString().slice(0, 16);
+                input.placeholder = nextHour;
+                input.value = nextHour;
+            }
+        }
+
+        async function loadScheduledTasks() {
+            const listDiv = document.getElementById('scheduled-tasks-list');
+            try {
+                const res = await fetch('/api/scheduler/tasks');
+                const data = await res.json();
+                const tasks = data.tasks || [];
+                if (tasks.length === 0) {
+                    listDiv.innerHTML = `<div style="color: #94a3b8; padding: 10px 0;">暂无配置的定时任务。点击右上角【➕ 新建定时任务】开启自动化！</div>`;
+                    return;
+                }
+                listDiv.innerHTML = tasks.map(t => {
+                    const nextRun = t.next_run_at ? new Date(t.next_run_at * 1000).toLocaleString() : '未排期';
+                    const lastRun = t.last_run_at ? new Date(t.last_run_at * 1000).toLocaleString() : '从未执行';
+                    const cycleDesc = t.schedule_type === 'daily' ? `每天 ${t.schedule_time}` : (t.schedule_type === 'interval' ? `每隔 ${t.schedule_time} 分钟` : `单次执行: ${t.schedule_time}`);
+                    return `
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                    <strong style="color: #0f172a; font-size: 1rem;">${escapeHtml(t.name)}</strong>
+                                    <span style="font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; background: #e0f2fe; color: #0284c7;">${escapeHtml(cycleDesc)}</span>
+                                    <span style="font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #475569;">${t.profile === 'pro' ? '🚀 Pro' : '⚡ Flash'}</span>
+                                    <span style="font-size: 0.75rem; color: ${t.enabled ? '#10b981' : '#94a3b8'}; font-weight: bold;">● ${t.enabled ? '运行中' : '已停用'}</span>
+                                </div>
+                                <div style="font-size: 0.85rem; color: #334155; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">指令: ${escapeHtml(t.goal)}</div>
+                                <div style="font-size: 0.75rem; color: #94a3b8; display: flex; gap: 15px;">
+                                    <span>下次执行: ${nextRun}</span>
+                                    <span>最近执行: ${lastRun}</span>
+                                    <span>累计执行: ${t.run_count} 次</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px; margin-left: 15px;">
+                                <button class="refresh-btn" style="margin: 0; background-color: #3b82f6; padding: 6px 12px; font-size: 0.8rem;" onclick="triggerScheduledTaskNow('${t.task_id}')" title="立刻执行一次">⚡ 立即触发</button>
+                                <button class="refresh-btn" style="margin: 0; background-color: ${t.enabled ? '#f59e0b' : '#10b981'}; padding: 6px 12px; font-size: 0.8rem;" onclick="toggleScheduledTask('${t.task_id}', ${!t.enabled})">${t.enabled ? '停用' : '启用'}</button>
+                                <button class="refresh-btn" style="margin: 0; background-color: #ef4444; padding: 6px 12px; font-size: 0.8rem;" onclick="deleteScheduledTask('${t.task_id}')">删除</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                listDiv.innerHTML = `<div style="color: #ef4444;">加载定时任务失败: ${err.message}</div>`;
+            }
+        }
+
+        async function saveNewScheduledTask() {
+            const name = document.getElementById('sched-name-input').value.trim();
+            const goal = document.getElementById('sched-goal-input').value.trim();
+            const type = document.getElementById('sched-type-select').value;
+            const timeVal = document.getElementById('sched-time-input').value.trim();
+            const profile = document.getElementById('sched-profile-select').value;
+
+            if (!goal) {
+                alert("请输入具体的执行目标指令！");
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/scheduler/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name || '未命名自动化任务',
+                        goal: goal,
+                        schedule_type: type,
+                        schedule_time: timeVal,
+                        profile: profile
+                    })
+                });
+                if (res.ok) {
+                    closeNewScheduledTaskModal();
+                    loadScheduledTasks();
+                } else {
+                    const data = await res.json();
+                    alert(`创建失败: ${data.detail || '未知错误'}`);
+                }
+            } catch (err) {
+                alert(`请求异常: ${err.message}`);
+            }
+        }
+
+        async function toggleScheduledTask(taskId, enabled) {
+            try {
+                await fetch(`/api/scheduler/tasks/${taskId}/toggle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled: enabled })
+                });
+                loadScheduledTasks();
+            } catch (err) {
+                alert(`操作失败: ${err.message}`);
+            }
+        }
+
+        async function triggerScheduledTaskNow(taskId) {
+            try {
+                const res = await fetch(`/api/scheduler/tasks/${taskId}/trigger`, { method: 'POST' });
+                if (res.ok) {
+                    alert("已成功加入执行队列并开始调度！");
+                    loadScheduledTasks();
+                }
+            } catch (err) {
+                alert(`触发失败: ${err.message}`);
+            }
+        }
+
+        async function deleteScheduledTask(taskId) {
+            if (!confirm("确定要删除这个定时任务吗？")) return;
+            try {
+                await fetch(`/api/scheduler/tasks/${taskId}`, { method: 'DELETE' });
+                loadScheduledTasks();
+            } catch (err) {
+                alert(`删除失败: ${err.message}`);
             }
         }
 

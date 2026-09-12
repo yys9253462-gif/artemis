@@ -141,6 +141,73 @@ export class ChatInterfaceComponent {
     this.phoneTextInput = '';
   }
 
+  // ⏰ Scheduler State for Workspace
+  public scheduledTasks = signal<any[]>([]);
+  public isCreatingScheduledTask = signal<boolean>(false);
+  public newSchedName = '';
+  public newSchedGoal = '';
+  public newSchedType = 'daily';
+  public newSchedTime = '08:30';
+  public newSchedProfile = 'flash';
+
+  public loadScheduledTasks(): void {
+    fetch('/api/scheduler/tasks')
+      .then(res => res.json())
+      .then(data => {
+        this.scheduledTasks.set(data.tasks || []);
+      })
+      .catch(err => console.error('Load scheduled tasks error:', err));
+  }
+
+  public saveScheduledTask(): void {
+    if (!this.newSchedGoal.trim()) return;
+    fetch('/api/scheduler/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: this.newSchedName.trim() || '未命名自动化任务',
+        goal: this.newSchedGoal.trim(),
+        schedule_type: this.newSchedType,
+        schedule_time: this.newSchedTime.trim(),
+        profile: this.newSchedProfile,
+      })
+    })
+      .then(res => res.json())
+      .then(() => {
+        this.isCreatingScheduledTask.set(false);
+        this.newSchedName = '';
+        this.newSchedGoal = '';
+        this.loadScheduledTasks();
+      })
+      .catch(err => console.error('Save scheduled task error:', err));
+  }
+
+  public triggerScheduledTask(taskId: string): void {
+    fetch(`/api/scheduler/tasks/${taskId}/trigger`, { method: 'POST' })
+      .then(res => res.json())
+      .then(() => {
+        this.agentService.fetchStatus();
+        this.loadScheduledTasks();
+      })
+      .catch(err => console.error('Trigger error:', err));
+  }
+
+  public toggleScheduledTask(taskId: string, enabled: boolean): void {
+    fetch(`/api/scheduler/tasks/${taskId}/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled })
+    })
+      .then(() => this.loadScheduledTasks())
+      .catch(err => console.error('Toggle error:', err));
+  }
+
+  public deleteScheduledTask(taskId: string): void {
+    fetch(`/api/scheduler/tasks/${taskId}`, { method: 'DELETE' })
+      .then(() => this.loadScheduledTasks())
+      .catch(err => console.error('Delete error:', err));
+  }
+
   /**
    * Submit a new task goal to the backend
    */
