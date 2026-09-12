@@ -4,16 +4,14 @@
   // ==============================================================================
 
   // ------------------------------------------------------------------------------
-  // 1. 全局默认模型配置 (各子节点未显式指定时均继承此项)
+  // 1. 全局默认模型配置 (已配置为您专属的中转站 Gemini 模型)
   // ------------------------------------------------------------------------------
   "default": {
-    "provider": "google",
-    "model": "gemini-3.8-flash",
-    "thinking_level": "medium",
+    "provider": "openai",
+    "model": "gemini-3.8-flash-high",
     "fallback": {
-      "provider": "google",
-      "model": "gemini-3.7-flash",
-      "thinking_level": "medium"
+      "provider": "openai",
+      "model": "gemini-3.1-pro-high"
     }
   },
 
@@ -21,6 +19,11 @@
   // 2. 常用开箱即用模型预设 (可通过代码或 CLI 一键切换)
   // ------------------------------------------------------------------------------
   "presets": {
+    "isoziyuan-gemini": {
+      "provider": "openai",
+      "model": "gemini-3.8-flash-high",
+      "fallback": { "provider": "openai", "model": "gemini-3.1-pro-high" }
+    },
     "gemini-flagship": {
       "provider": "google",
       "model": "gemini-3.8-flash",
