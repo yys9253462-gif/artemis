@@ -14,21 +14,20 @@
 
 """Native Companion Hardware Dock Bar for Scrcpy Window.
 
-Creates a sticky, stylish desktop floating navigation & shortcut toolbar
-that docks tightly to the bottom of the active Scrcpy window:
+Creates a sticky, stylish desktop vertical toolbar on the RIGHT side
+of the active Scrcpy window with true 60Hz real-time position tracking:
 - [◀ 返回] (Back)
-- [● 主页] (Home)
-- [■ 多任务] (App Switch)
+- [● 桌面] (Home)
+- [■ 任务] (App Switch)
 - [🔔 通知] (Notifications)
-- [⏻ 电源] (Power/Wake)
-- [🔊+] [🔉-] (Volume)
-- [📋 剪贴板直投] (Paste clipboard text into phone)
+- [⏻ 亮灭] (Power/Wake)
+- [🔊 音量+] (Volume Up)
+- [🔉 音量-] (Volume Down)
+- [📋 粘贴] (Paste clipboard text into phone)
 """
 
-import asyncio
 import os
 import subprocess
-import sys
 import threading
 import time
 
@@ -55,12 +54,18 @@ class ScrcpyCompanionDock:
         def enum_cb(hwnd, res):
             if win32gui.IsWindowVisible(hwnd):
                 text = win32gui.GetWindowText(hwnd)
+                # Ensure it is the SDL_app window from Scrcpy and contains our title keyword
                 if self.window_keyword in text:
-                    res.append((hwnd, text))
+                    try:
+                        cls_name = win32gui.GetClassName(hwnd)
+                        if cls_name == "SDL_app":
+                            res.append(hwnd)
+                    except Exception:
+                        res.append(hwnd)
 
         win32gui.EnumWindows(enum_cb, found)
         if found:
-            return found[0][0]
+            return found[0]
         return None
 
     def _send_adb_key(self, keycode: str):
@@ -90,14 +95,14 @@ class ScrcpyCompanionDock:
             pass
 
     def run_gui_loop(self):
-        # Poll for target scrcpy window
+        # Poll for target scrcpy window (up to 30 attempts, 6 seconds)
         for _ in range(30):
             self.target_hwnd = self._find_target_window()
             if self.target_hwnd:
                 break
-            time.sleep(0.3)
+            time.sleep(0.2)
 
-        if not self.target_hwnd:
+        if not self.target_hwnd or not win32gui.IsWindow(self.target_hwnd):
             return
 
         hInstance = win32api.GetModuleHandle(None)
@@ -126,7 +131,7 @@ class ScrcpyCompanionDock:
                 return 0
             return win32gui.DefWindowProc(hwnd, msg, wParam, lParam)
 
-        className = "ArtemisScrcpyCompanionDock"
+        className = "ArtemisScrcpyVerticalDockClass"
         wc = win32gui.WNDCLASS()
         wc.lpfnWndProc = wndProc
         wc.lpszClassName = className
@@ -137,22 +142,19 @@ class ScrcpyCompanionDock:
         except Exception:
             pass
 
-        # Calculate initial position: docked to the RIGHT side of the scrcpy phone window
-        rect = win32gui.GetWindowRect(self.target_hwnd)
-        left, top, right, bottom = rect
+        t_rect = win32gui.GetWindowRect(self.target_hwnd)
         dock_w = 72
         dock_h = 8 * 38 + 10
-        # Position vertically aligned to top of scrcpy window, placed at right edge
-        x = right
-        y = max(10, top + 30)
 
+        # Create window owned by self.target_hwnd
         self.dock_hwnd = win32gui.CreateWindowEx(
             win32con.WS_EX_TOPMOST | win32con.WS_EX_TOOLWINDOW,
             className,
-            "Artemis 侧边实体按键栏",
+            "CompanionSideBar",
             win32con.WS_POPUP | win32con.WS_VISIBLE | win32con.WS_BORDER,
-            x, y, dock_w, dock_h,
-            0, 0, hInstance, None
+            t_rect[2] - 1, max(10, t_rect[1] + 30), dock_w, dock_h,
+            self.target_hwnd,  # OWNER HWND
+            0, hInstance, None
         )
 
         buttons = [
@@ -177,31 +179,39 @@ class ScrcpyCompanionDock:
 
         self.is_running = True
 
-        # Watchdog loop: follow target window position and snap to RIGHT side
-        def follower():
-            while self.is_running:
-                try:
-                    if not win32gui.IsWindow(self.target_hwnd):
-                        break
-                    t_rect = win32gui.GetWindowRect(self.target_hwnd)
-                    t_left, t_top, t_right, t_bottom = t_rect
-                    # Snap vertically directly beside the right border of the scrcpy window
-                    snap_x = t_right - 1
-                    snap_y = max(10, t_top + 30)
+        # Non-blocking single-thread loop: processes UI events and tracks position simultaneously
+        last_r = None
+        while self.is_running:
+            if not win32gui.IsWindow(self.target_hwnd):
+                break
+            try:
+                r = win32gui.GetWindowRect(self.target_hwnd)
+                if r != last_r:
+                    last_r = r
                     win32gui.SetWindowPos(
                         self.dock_hwnd,
                         win32con.HWND_TOPMOST,
-                        snap_x, snap_y, dock_w, dock_h,
+                        r[2] - 1, max(10, r[1] + 30), dock_w, dock_h,
                         win32con.SWP_NOACTIVATE | win32con.SWP_SHOWWINDOW
                     )
-                    time.sleep(0.04)
-                except Exception:
-                    break
-            if self.dock_hwnd and win32gui.IsWindow(self.dock_hwnd):
-                win32gui.DestroyWindow(self.dock_hwnd)
+            except Exception:
+                pass
 
-        threading.Thread(target=follower, daemon=True).start()
-        win32gui.PumpMessages()
+            # Pump all messages for the dock window
+            while True:
+                has_msg, msg = win32gui.PeekMessage(self.dock_hwnd, 0, 0, win32con.PM_REMOVE)
+                if not has_msg:
+                    break
+                if msg[1] == win32con.WM_QUIT:
+                    self.is_running = False
+                    break
+                win32gui.TranslateMessage(msg)
+                win32gui.DispatchMessage(msg)
+
+            time.sleep(0.015)  # ~66Hz ultra-smooth tracking
+
+        if self.dock_hwnd and win32gui.IsWindow(self.dock_hwnd):
+            win32gui.DestroyWindow(self.dock_hwnd)
 
     def start_in_background(self):
         self._thread = threading.Thread(target=self.run_gui_loop, daemon=True)
