@@ -282,6 +282,8 @@
             <button class="tab-btn active" onclick="switchTab('steps')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; border-bottom: 2px solid #3182ce; color: #3182ce; transition: color 0.2s, border-color 0.2s; outline: none;">👣 执行步骤时序</button>
             <button class="tab-btn" onclick="switchTab('traces')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; color: #718096; transition: color 0.2s, border-color 0.2s; outline: none;">🌳 追踪调用树 (Traces)</button>
             <button class="tab-btn" onclick="switchTab('replay')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; color: #718096; transition: color 0.2s, border-color 0.2s; outline: none;">🔄 动作回放 (Replay)</button>
+            <button class="tab-btn" onclick="switchTab('live-control')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; color: #718096; transition: color 0.2s, border-color 0.2s; outline: none;">📱 实时投屏与触控</button>
+            <button class="tab-btn" onclick="switchTab('wifi-adb')" style="padding: 8px 16px; border: none; background: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; color: #718096; transition: color 0.2s, border-color 0.2s; outline: none;">📶 无线 ADB 管理</button>
             
             <div style="margin-left: auto; display: flex; gap: 8px;">
                 <button class="refresh-btn" style="margin-bottom: 0; background-color: #38bdf8; color: #0f172a; font-weight: bold;" onclick="openNotesModal()">📚 查看执行笔记</button>
@@ -307,8 +309,6 @@
 
         <!-- Step Replay Tab Panel -->
         <div id="replay-container-wrapper" style="display: none; height: calc(100vh - 180px); overflow-y: auto; padding-right: 10px;">
-            <!-- Global Replay Header (Device Selector, etc.) -->
-            <!-- Global Replay Header -->
             <div style="background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; gap: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 20px; flex-shrink: 0;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 1.25rem;">🔄</span>
@@ -324,6 +324,98 @@
             <!-- Steps Replay Vertical Timeline Container -->
             <div id="replay-timeline-container">
                 <div style="padding: 40px; color: #718096; text-align: center; font-size: 1.1rem;">请从左侧选择一个会话以加载动作回放。</div>
+            </div>
+        </div>
+
+        <!-- 📱 Live Screen Stream & Interactive Touch Control Panel -->
+        <div id="live-control-container" style="display: none; height: calc(100vh - 180px); overflow-y: auto; padding-right: 10px;">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                <!-- Phone Screen Canvas Card -->
+                <div style="background: #1e293b; padding: 16px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); border: 2px solid #334155; display: inline-flex; flex-direction: column; align-items: center;">
+                    <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 10px; color: #94a3b8; font-size: 0.85rem;">
+                        <span id="live-stream-status">● 实时投屏流已准备就绪</span>
+                        <span>可使用鼠标直接点击或滑动屏幕</span>
+                    </div>
+                    <div id="phone-screen-wrapper" style="position: relative; width: 360px; height: 780px; border-radius: 12px; overflow: hidden; background: #000; cursor: crosshair; user-select: none;">
+                        <img id="live-stream-img" src="/api/stream/device-live" style="width: 100%; height: 100%; object-fit: fill;" alt="Device Screen"/>
+                        <div id="touch-ripple" style="display: none; position: absolute; width: 24px; height: 24px; border-radius: 50%; background: rgba(56, 189, 248, 0.6); border: 2px solid #38bdf8; pointer-events: none; transform: translate(-50%, -50%);"></div>
+                    </div>
+                    <!-- Navigation Keys Bar -->
+                    <div style="display: flex; gap: 15px; margin-top: 15px; width: 100%; justify-content: center;">
+                        <button class="refresh-btn" style="margin: 0; background-color: #334155; color: white; padding: 8px 16px;" onclick="sendKeyEvent('KEYCODE_BACK')" title="返回键">◀ 返回</button>
+                        <button class="refresh-btn" style="margin: 0; background-color: #334155; color: white; padding: 8px 16px;" onclick="sendKeyEvent('KEYCODE_HOME')" title="回到桌面">● 主页</button>
+                        <button class="refresh-btn" style="margin: 0; background-color: #334155; color: white; padding: 8px 16px;" onclick="sendKeyEvent('KEYCODE_APP_SWITCH')" title="多任务切换">■ 多任务</button>
+                        <button class="refresh-btn" style="margin: 0; background-color: #334155; color: white; padding: 8px 16px;" onclick="sendKeyEvent('KEYCODE_POWER')" title="电源/亮屏">⏻ 亮灭屏</button>
+                    </div>
+                </div>
+
+                <!-- Input & Shortcut Panel -->
+                <div style="flex: 1; min-width: 320px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                    <h3 style="margin-top: 0; color: #0f172a; font-size: 1.1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">⌨️ 虚拟触控与文本键入</h3>
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; color: #334155;">向手机直接发送文本：</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="phone-text-input" placeholder="输入文字并发送到当前输入框..." style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; outline: none;"/>
+                            <button class="refresh-btn" style="margin: 0;" onclick="sendTextToPhone()">发送</button>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; color: #334155;">常用快捷控制：</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            <button class="refresh-btn" style="margin: 0; background-color: #f1f5f9; color: #334155;" onclick="sendKeyEvent('KEYCODE_VOLUME_UP')">🔊 音量+</button>
+                            <button class="refresh-btn" style="margin: 0; background-color: #f1f5f9; color: #334155;" onclick="sendKeyEvent('KEYCODE_VOLUME_DOWN')">🔉 音量-</button>
+                            <button class="refresh-btn" style="margin: 0; background-color: #f1f5f9; color: #334155;" onclick="sendSwipe('up')">⬆️ 向上滑屏</button>
+                            <button class="refresh-btn" style="margin: 0; background-color: #f1f5f9; color: #334155;" onclick="sendSwipe('down')">⬇️ 向下滑屏</button>
+                        </div>
+                    </div>
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #64748b; line-height: 1.5;">
+                        <strong>💡 操作说明：</strong><br>
+                        • 鼠标在左侧手机屏幕上**直接点击** = 手机屏幕点击 (Tap)；<br>
+                        • 鼠标在手机屏幕上**拖拽滑动** = 手机手势滑动 (Swipe)；<br>
+                        • 当 AI 执行任务时，画面会同步显示手机的实时操作反馈！
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 📶 Wireless Wi-Fi ADB Management Panel -->
+        <div id="wifi-adb-container" style="display: none; height: calc(100vh - 180px); overflow-y: auto; padding-right: 10px;">
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); max-width: 800px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <h2 style="margin: 0; color: #0f172a; font-size: 1.25rem;">📶 局域网无线 Wi-Fi ADB 管理</h2>
+                        <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.85rem;">支持局域网免插线自动扫描、快速配对与断线自动保活守护</p>
+                    </div>
+                    <button class="refresh-btn" style="margin: 0; background-color: #10b981;" onclick="triggerAutoWifiScan()">⚡ 一键局域网扫描连接</button>
+                </div>
+
+                <!-- Manual Connect Row -->
+                <div style="margin-bottom: 25px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <h4 style="margin: 0 0 10px 0; color: #334155;">1. 手动连接指定 IP 设备</h4>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="wifi-ip-input" placeholder="输入手机 Wi-Fi IP与端口 (如 192.168.5.25:5555)" style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; outline: none;"/>
+                        <button class="refresh-btn" style="margin: 0;" onclick="connectWifiAdb()">立即连接</button>
+                    </div>
+                </div>
+
+                <!-- Android 11+ Pairing Row -->
+                <div style="margin-bottom: 25px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <h4 style="margin: 0 0 10px 0; color: #334155;">2. Android 11+ 无线配对 (Pairing)</h4>
+                    <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: #64748b;">手机开启【开发者选项】->【无线调试】->【使用配对码配对设备】，填入弹出界面的 IP:端口 与 6位配对码：</p>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="pair-ip-input" placeholder="配对 IP与端口 (如 192.168.5.25:37123)" style="flex: 2; padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; outline: none;"/>
+                        <input type="text" id="pair-code-input" placeholder="6位配对码" style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; outline: none;"/>
+                        <button class="refresh-btn" style="margin: 0; background-color: #6366f1;" onclick="pairWifiAdb()">配对设备</button>
+                    </div>
+                </div>
+
+                <!-- Discovered & Connected List -->
+                <div>
+                    <h4 style="margin: 0 0 10px 0; color: #334155;">已识别的设备列表：</h4>
+                    <div id="wifi-devices-list" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.9rem;">
+                        <div style="color: #94a3b8; padding: 10px 0;">点击右上角【一键局域网扫描连接】即可自动探测并接入局域网设备。</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1268,22 +1360,25 @@
             const stepsContainer = document.getElementById('steps-container');
             const tracesWrapper = document.getElementById('traces-container-wrapper');
             const replayWrapper = document.getElementById('replay-container-wrapper');
+            const liveControlWrapper = document.getElementById('live-control-container');
+            const wifiAdbWrapper = document.getElementById('wifi-adb-container');
             
+            stepsContainer.style.display = (tabName === 'steps') ? 'block' : 'none';
+            tracesWrapper.style.display = (tabName === 'traces') ? 'block' : 'none';
+            replayWrapper.style.display = (tabName === 'replay') ? 'block' : 'none';
+            liveControlWrapper.style.display = (tabName === 'live-control') ? 'block' : 'none';
+            wifiAdbWrapper.style.display = (tabName === 'wifi-adb') ? 'block' : 'none';
+
             if (tabName === 'steps') {
-                stepsContainer.style.display = 'block';
-                tracesWrapper.style.display = 'none';
-                replayWrapper.style.display = 'none';
                 loadSteps();
             } else if (tabName === 'traces') {
-                stepsContainer.style.display = 'none';
-                tracesWrapper.style.display = 'block';
-                replayWrapper.style.display = 'none';
                 loadTree();
             } else if (tabName === 'replay') {
-                stepsContainer.style.display = 'none';
-                tracesWrapper.style.display = 'none';
-                replayWrapper.style.display = 'block';
                 loadReplaySteps();
+            } else if (tabName === 'live-control') {
+                initLiveScreenStream();
+            } else if (tabName === 'wifi-adb') {
+                refreshWifiAdbDevices();
             }
         }
 
@@ -3700,6 +3795,189 @@
                 }
             } catch (err) {
                 alert(`清理过程中发生异常: ${err.message}`);
+            }
+        }
+
+        // ---------------------------------------------------------------------------
+        // 📱 Live Screen Stream & Interactive Touch Controls
+        // ---------------------------------------------------------------------------
+        let isMouseDownOnScreen = false;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+
+        function initLiveScreenStream() {
+            const img = document.getElementById('live-stream-img');
+            const wrapper = document.getElementById('phone-screen-wrapper');
+            const statusText = document.getElementById('live-stream-status');
+            if (!img || !wrapper) return;
+
+            // Re-bind source to avoid caching
+            img.src = '/api/stream/device-live?t=' + Date.now();
+            statusText.innerText = "● 实时投屏流已连接 (60fps)";
+            statusText.style.color = "#38a169";
+
+            wrapper.onmousedown = function(e) {
+                isMouseDownOnScreen = true;
+                const rect = wrapper.getBoundingClientRect();
+                touchStartX = (e.clientX - rect.left) / rect.width;
+                touchStartY = (e.clientY - rect.top) / rect.height;
+                touchStartTime = Date.now();
+                showTouchRipple(e.clientX - rect.left, e.clientY - rect.top);
+            };
+
+            wrapper.onmouseup = async function(e) {
+                if (!isMouseDownOnScreen) return;
+                isMouseDownOnScreen = false;
+                const rect = wrapper.getBoundingClientRect();
+                const endX = (e.clientX - rect.left) / rect.width;
+                const endY = (e.clientY - rect.top) / rect.height;
+                const duration = Date.now() - touchStartTime;
+
+                const dx = Math.abs(endX - touchStartX);
+                const dy = Math.abs(endY - touchStartY);
+
+                if (dx < 0.03 && dy < 0.03) {
+                    // Tap
+                    await sendTouchEvent('tap', {
+                        x: Math.round(touchStartX * 1000),
+                        y: Math.round(touchStartY * 1000)
+                    });
+                } else {
+                    // Swipe
+                    await sendTouchEvent('swipe', {
+                        x1: Math.round(touchStartX * 1000),
+                        y1: Math.round(touchStartY * 1000),
+                        x2: Math.round(endX * 1000),
+                        y2: Math.round(endY * 1000),
+                        duration: Math.max(200, duration)
+                    });
+                }
+            };
+        }
+
+        function showTouchRipple(x, y) {
+            const ripple = document.getElementById('touch-ripple');
+            if (!ripple) return;
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.style.display = 'block';
+            setTimeout(() => { ripple.style.display = 'none'; }, 300);
+        }
+
+        async function sendTouchEvent(action, payload) {
+            try {
+                await fetch('/api/stream/touch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: action, ...payload })
+                });
+            } catch (err) {
+                console.error("Touch injection error:", err);
+            }
+        }
+
+        async function sendKeyEvent(keycode) {
+            await sendTouchEvent('keyevent', { keycode: keycode });
+        }
+
+        async function sendSwipe(dir) {
+            if (dir === 'up') {
+                await sendTouchEvent('swipe', { x1: 500, y1: 800, x2: 500, y2: 200, duration: 300 });
+            } else if (dir === 'down') {
+                await sendTouchEvent('swipe', { x1: 500, y1: 200, x2: 500, y2: 800, duration: 300 });
+            }
+        }
+
+        async function sendTextToPhone() {
+            const input = document.getElementById('phone-text-input');
+            const text = input ? input.value : '';
+            if (!text) return;
+            await sendTouchEvent('text', { text: text });
+            input.value = '';
+        }
+
+        // ---------------------------------------------------------------------------
+        // 📶 Wireless Wi-Fi ADB Management
+        // ---------------------------------------------------------------------------
+        async function refreshWifiAdbDevices() {
+            const listDiv = document.getElementById('wifi-devices-list');
+            try {
+                const res = await fetch('/api/wifi-adb/devices');
+                const data = await res.json();
+                const devices = data.devices || [];
+                if (devices.length === 0) {
+                    listDiv.innerHTML = `<div style="color: #94a3b8; padding: 10px 0;">未检测到已连接的设备。请开启手机【无线调试】并点击上方扫描。</div>`;
+                    return;
+                }
+                listDiv.innerHTML = devices.map(d => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span>${d.is_wifi ? '📶' : '🔌'}</span>
+                            <strong>${escapeHtml(d.serial)}</strong>
+                            <span style="font-size: 0.8rem; color: ${d.state === 'device' ? '#10b981' : '#f59e0b'};">(${d.state})</span>
+                        </div>
+                        <span style="font-size: 0.8rem; color: #64748b;">${d.is_wifi ? 'Wi-Fi 无线连接' : 'USB 有线连接'}</span>
+                    </div>
+                `).join('');
+            } catch (err) {
+                listDiv.innerHTML = `<div style="color: #ef4444;">获取设备列表失败: ${err.message}</div>`;
+            }
+        }
+
+        async function connectWifiAdb() {
+            const input = document.getElementById('wifi-ip-input');
+            const address = input ? input.value.trim() : '';
+            if (!address) {
+                alert("请输入目标手机的 IP:端口");
+                return;
+            }
+            try {
+                const res = await fetch('/api/wifi-adb/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address: address })
+                });
+                const data = await res.json();
+                alert(data.output || (data.success ? "连接成功！" : "连接失败，请检查手机网络"));
+                refreshWifiAdbDevices();
+            } catch (err) {
+                alert(`连接异常: ${err.message}`);
+            }
+        }
+
+        async function pairWifiAdb() {
+            const ipInput = document.getElementById('pair-ip-input');
+            const codeInput = document.getElementById('pair-code-input');
+            const address = ipInput ? ipInput.value.trim() : '';
+            const code = codeInput ? codeInput.value.trim() : '';
+            if (!address || !code) {
+                alert("配对需要输入 IP:端口 以及 6位配对码");
+                return;
+            }
+            try {
+                const res = await fetch('/api/wifi-adb/pair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address: address, code: code })
+                });
+                const data = await res.json();
+                alert(data.output || (data.success ? "配对成功！" : "配对失败"));
+                refreshWifiAdbDevices();
+            } catch (err) {
+                alert(`配对异常: ${err.message}`);
+            }
+        }
+
+        async function triggerAutoWifiScan() {
+            const listDiv = document.getElementById('wifi-devices-list');
+            listDiv.innerHTML = `<div style="color: #3b82f6; padding: 10px 0;">⚡ 正在全速扫描局域网 mDNS 与 Wi-Fi 5555 端口中，请稍候...</div>`;
+            try {
+                const res = await fetch('/api/wifi-adb/scan-and-connect', { method: 'POST' });
+                const data = await res.json();
+                refreshWifiAdbDevices();
+            } catch (err) {
+                listDiv.innerHTML = `<div style="color: #ef4444;">自动扫描失败: ${err.message}</div>`;
             }
         }
 

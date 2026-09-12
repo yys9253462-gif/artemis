@@ -12,18 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Device Screen Live Streaming Router.
+"""Device Screen Live Streaming & Interactive Virtual Touch Control Router.
 
-Exposes real-time screen streaming endpoints for the Web UI.
+Exposes real-time screen streaming and bidirectional user touch injection endpoints.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
 try:
     from admin_console.services.device_stream_service import device_stream_service
+    from admin_console.services.wifi_adb_service import wifi_adb_service
 except ImportError:
     from apps.admin_console.services.device_stream_service import device_stream_service
+    from apps.admin_console.services.wifi_adb_service import wifi_adb_service
 
 router = APIRouter(tags=["stream"])
 
@@ -54,3 +56,49 @@ async def get_device_stream_state():
             "live_stream_url": "/api/stream/device-live" if serial else None,
         }
     )
+
+
+@router.post("/api/stream/touch")
+async def inject_device_touch(request: Request):
+    """Inject interactive user touch inputs (tap, swipe, keyevent, text) to real phone."""
+    payload = await request.json()
+    action = payload.get("action", "tap")
+    success = await device_stream_service.inject_touch_event(action, payload)
+    return JSONResponse({"success": success, "action": action})
+
+
+# ---------------------------------------------------------------------------
+# Wireless ADB Management Endpoints
+# ---------------------------------------------------------------------------
+
+@router.get("/api/wifi-adb/devices")
+async def list_wifi_adb_devices():
+    """List connected devices and wireless status."""
+    devices = await wifi_adb_service.get_connected_devices()
+    return JSONResponse({"devices": devices})
+
+
+@router.post("/api/wifi-adb/connect")
+async def connect_wifi_adb(request: Request):
+    """Connect to a Wi-Fi device by IP:Port."""
+    body = await request.json()
+    address = body.get("address", "")
+    res = await wifi_adb_service.connect_device(address)
+    return JSONResponse(res)
+
+
+@router.post("/api/wifi-adb/pair")
+async def pair_wifi_adb(request: Request):
+    """Pair an Android 11+ wireless debugging phone."""
+    body = await request.json()
+    address = body.get("address", "")
+    code = body.get("code", "")
+    res = await wifi_adb_service.pair_device(address, code)
+    return JSONResponse(res)
+
+
+@router.post("/api/wifi-adb/scan-and-connect")
+async def scan_and_connect_wifi_adb():
+    """Auto scan local mDNS and subnet port 5555 to automatically connect wireless phones."""
+    res = await wifi_adb_service.auto_discover_and_connect()
+    return JSONResponse(res)

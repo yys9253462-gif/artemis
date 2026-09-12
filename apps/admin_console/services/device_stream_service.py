@@ -134,4 +134,47 @@ class DeviceStreamService:
             await self.stop_capturing()
 
 
+    async def inject_touch_event(self, action: str, data: dict) -> bool:
+        """Inject virtual touch events (tap, swipe, keyevent, text) directly to the active device."""
+        serial = await self.get_device_serial()
+        adb_bin = find_adb()
+        prefix = [adb_bin, "-s", serial, "shell", "input"] if serial else [adb_bin, "shell", "input"]
+
+        try:
+            if action == "tap":
+                x = int(data.get("x", 0))
+                y = int(data.get("y", 0))
+                proc = await asyncio.create_subprocess_exec(*prefix, "tap", str(x), str(y))
+                await proc.communicate()
+                return proc.returncode == 0
+
+            elif action == "swipe":
+                x1 = int(data.get("x1", 0))
+                y1 = int(data.get("y1", 0))
+                x2 = int(data.get("x2", 0))
+                y2 = int(data.get("y2", 0))
+                duration = int(data.get("duration", 300))
+                proc = await asyncio.create_subprocess_exec(*prefix, "swipe", str(x1), str(y1), str(x2), str(y2), str(duration))
+                await proc.communicate()
+                return proc.returncode == 0
+
+            elif action == "keyevent":
+                keycode = data.get("keycode", "KEYCODE_BACK")
+                proc = await asyncio.create_subprocess_exec(*prefix, "keyevent", str(keycode))
+                await proc.communicate()
+                return proc.returncode == 0
+
+            elif action == "text":
+                text = str(data.get("text", ""))
+                # Escape spaces for adb input text
+                escaped = text.replace(" ", "%s")
+                proc = await asyncio.create_subprocess_exec(*prefix, "text", escaped)
+                await proc.communicate()
+                return proc.returncode == 0
+        except Exception as e:
+            logger.error(f"[StreamService] Touch event injection failed ({action}): {e}")
+            return False
+        return False
+
+
 device_stream_service = DeviceStreamService()

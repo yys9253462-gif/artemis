@@ -92,6 +92,7 @@ except ImportError:
     from apps.admin_console.services.ipc_service import ipc_service
     from apps.admin_console.services.model_service import model_service
     from apps.admin_console.services.task_queue_service import task_queue_service
+    from apps.admin_console.services.wifi_adb_service import wifi_adb_service
 
 # Initialize language server synchronization address
 init_ls_address()
@@ -159,12 +160,15 @@ async def on_startup():
 
     await ipc_service.start_server()
     state.worker_task = asyncio.create_task(task_queue_service.queue_worker())
+    # Start the Wi-Fi ADB reconnect watchdog
+    wifi_adb_service.start_watchdog()
 
 
 async def on_shutdown():
     """Stop task and IPC children before the UI server exits."""
     state.is_shutting_down = True
     state.shutdown_event.set()
+    wifi_adb_service.stop_watchdog()
     task_queue_service._broadcast_event("server_shutdown", {"status": "stopping"})
     owned_session_ids = {
         str(item["session_id"])
