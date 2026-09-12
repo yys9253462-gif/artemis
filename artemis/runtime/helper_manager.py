@@ -754,6 +754,12 @@ class AccessibilityHelperManager:
                     )
                     result = self._adb(serial, "install", "-r", "-g", str(bundled.apk_path))
                     output = f"{result.stdout or ''}\n{result.stderr or ''}"
+                    # Fallback for Xiaomi/MIUI/Flyme/ColorOS which reject -g flag (INSTALL_GRANT_RUNTIME_PERMISSIONS)
+                    if result.returncode != 0 and "INSTALL_GRANT_RUNTIME_PERMISSIONS" in output:
+                        logger.warning(f"Device {serial} rejected -g permission flag. Retrying adb install without -g...")
+                        result = self._adb(serial, "install", "-r", str(bundled.apk_path))
+                        output = f"{result.stdout or ''}\n{result.stderr or ''}"
+
                     if result.returncode != 0 or "Success" not in output:
                         return ProvisionResult(
                             ok=False,
