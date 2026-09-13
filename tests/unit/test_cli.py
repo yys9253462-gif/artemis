@@ -24,7 +24,10 @@ def test_cli_help():
     """Verify top-level CLI help returns status 0 and lists core subcommands."""
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
-    assert "Artemis: Autonomous Multimodal Android Agent" in result.output
+    # The banner is localized to Chinese for this deployment; assert the stable
+    # product name rather than the historical English tagline.
+    assert "Artemis" in result.output
+    assert "移动" in result.output
     assert "run" in result.output
     assert "batch" in result.output
     assert "server" in result.output
@@ -36,7 +39,7 @@ def test_cli_version():
     """Verify --version returns version banner."""
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert "Artemis Agent Platform" in result.output
+    assert "Artemis 移动智能体平台" in result.output
 
 
 def test_cli_run_help():

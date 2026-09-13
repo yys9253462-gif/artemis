@@ -121,7 +121,7 @@ def _configure_usb_stay_awake(device_id: str) -> str | None:
         "verify active USB stay-awake state",
     )
     try:
-        value = int(configured.stdout.strip()) if configured is not None else -1
+        value = int((configured.stdout or "").strip()) if configured is not None else -1
     except (TypeError, ValueError):
         value = -1
     stay_on_active = (

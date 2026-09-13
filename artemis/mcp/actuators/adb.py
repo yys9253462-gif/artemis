@@ -403,7 +403,22 @@ class AdbActuator:
         return ActionResult.failure("focus_and_clear_text", "Failed to erase text.")
 
     async def take_over(self, message: str = "需要用户人工协助接管操作") -> ActionResult:
-        """Request human user to take over device for sensitive operations (captchas, 2FA, payments)."""
+        """Request human user to take over device for sensitive operations (captchas, 2FA, payments).
+
+        The pause is persisted to ``PAUSE_FILE`` -- the single source of truth that
+        ``/api/status`` reads -- so the takeover survives a page reload. The SSE
+        broadcast alone would only be seen by a client that happens to be connected.
+        """
+        pause_message = f"【需要人工接管】{message}"
+        persisted = False
+        try:
+            from artemis.config import PAUSE_FILE
+
+            PAUSE_FILE.write_text(pause_message, encoding="utf-8")
+            persisted = True
+        except (OSError, UnicodeError) as e:
+            logger.warning(f"Failed to persist take_over pause flag: {e}")
+
         try:
             from apps.admin_console.services.task_queue_service import task_queue_service
 
@@ -412,7 +427,7 @@ class AdbActuator:
                 "task_paused",
                 {
                     "session_id": str(session_id),
-                    "error": f"【需要人工接管】{message}",
+                    "error": pause_message,
                     "reason": "take_over",
                     "message": message,
                 },
@@ -420,7 +435,13 @@ class AdbActuator:
             logger.info(f"[Actuator] Human take_over requested: {message}")
         except Exception as e:
             logger.warning(f"Failed to broadcast take_over pause: {e}")
-        return ActionResult.success("take_over", f"已请求用户人工接管: {message}")
+
+        if not persisted:
+            return ActionResult.failure(
+                "take_over",
+                f"未能持久化人工接管请求（任务可能不会真正暂停）: {message}",
+            )
+        return ActionResult.success("take_over", f"已暂停并请求用户人工接管: {message}")
 
     # --- Internal observation primitives ---------------------------------------------
 

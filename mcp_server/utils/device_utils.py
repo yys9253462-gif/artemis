@@ -102,10 +102,12 @@ def get_connected_devices(adb_path: str | None = None) -> list[str]:
             stdin=subprocess.DEVNULL,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=5,
         )
         devices: list[str] = []
-        for line in res.stdout.splitlines():
+        for line in (res.stdout or "").splitlines():
             line_str = line.strip()
             if line_str and not line_str.startswith("List of devices"):
                 parts = line_str.split()

@@ -1106,9 +1106,15 @@ async def mobile_diagnose(
       - `verdict`: "ready" (就绪) | "degraded" (降级可用，缺少可选组件) | "blocked" (存在阻断性问题需修复)。
       - `summary`: 诊断简要结论与需要关注的问题。
       - `next_steps`: 按照修复顺序排列的指导步骤，包含推荐执行的修复命令 (Run:) 与操作指引 (Guidance:)。
-      - `device`: 当前连接的 Android 设备详情（序列号、型号、Android版本、锁屏状态、无障碍服务状态等）。
+      - `checks`: 每一项检查的逐条结果（名称、状态、说明与修复建议），按修复顺序排列。
+      - `host`: MCP 宿主环境信息（操作系统、Python 版本、配置文件路径等）。
+      - `device`: 当前连接的 Android 设备详情（序列号、型号、Android 版本、锁屏状态、无障碍服务状态等）。
+      - `emulator`: 本地 Android 虚拟设备 (AVD) 列表与后台启动进度。
       - `tasks`: 当前持有设备或正在排队的任务列表。
+      - `credentials`: 在开启 `verify_credentials=True` 时，各模型提供商的在线密钥校验结果。
+      - `device_probe`: 在开启 `probe_device=True` 时，对设备的端到端感知探测结果（截图 + UI 层级）。
       - `fixes_applied`: 在开启 `attempt_fix=True` 时自动执行的修复动作与结果。
+      - `logs`: 与诊断相关的近期服务日志摘要，便于定位异常根因。
 
     Args:
         attempt_fix: 是否自动尝试执行安全修复。

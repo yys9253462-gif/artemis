@@ -88,6 +88,7 @@ _TURN_ENDING_ORDER = (
     "press_key",
     "manage_app",
     "wait_for_delay",
+    "take_over",
 )
 
 #: Tool-loop ceiling per Operator turn (recited in the template, enforced in

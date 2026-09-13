@@ -89,6 +89,10 @@ OPTIONAL_ACTIONS: frozenset[str] = frozenset(
         "open_link",
         "erase_one_char",
         "focus_and_clear_text",
+        # Human-in-the-loop takeover for captchas / 2FA / payment screens. Declared to
+        # the Operator (it appears in OPERATOR_SHELL_ORDER and the turn-ending enum) so
+        # the model can pause and ask the user to finish a sensitive step by hand.
+        "take_over",
     }
 )
 

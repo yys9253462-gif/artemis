@@ -20,12 +20,34 @@ import pytest
 from apps.admin_console.services.model_service import ModelService
 
 
+#: Provider ids ``ModelProvider.from_string`` accepts. A deployment may route through
+#: a relay, so the reported provider is whatever the active config declares -- the
+#: invariant is that it is a real provider id, never a placeholder.
+KNOWN_PROVIDERS = frozenset(
+    {
+        "google",
+        "gemini",
+        "vertex",
+        "vertexai",
+        "openai",
+        "anthropic",
+        "claude",
+        "openrouter",
+        "xai",
+        "grok",
+        "ollama",
+        "vllm",
+        "custom",
+    }
+)
+
+
 def test_get_active_model_info_pro_architecture():
     """Verify that pro profile returns Pro architecture while keeping real LLM model."""
     info = ModelService.get_active_model_info("pro")
     assert info["name"] == "Pro"
     assert info["architecture"] == "ARTEMIS Pro"
-    assert info["provider"] == "google"
+    assert info["provider"] in KNOWN_PROVIDERS
     assert "id" in info
 
 
@@ -34,7 +56,7 @@ def test_get_active_model_info_flash_architecture():
     info = ModelService.get_active_model_info("flash")
     assert info["name"] == "Flash"
     assert info["architecture"] == "ARTEMIS Flash"
-    assert info["provider"] == "google"
+    assert info["provider"] in KNOWN_PROVIDERS
 
 
 def test_resolve_session_profile_from_device_info():

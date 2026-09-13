@@ -35,6 +35,74 @@ from artemis.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
+#: Chinese display-name -> candidate package ids, ordered longest-name-first so the
+#: most specific alias wins (``美团外卖`` before ``美团``). Used as a zero-LLM fast path
+#: for the apps this deployment drives most often; anything not listed falls through to
+#: the Hopper resolver.
+FAST_APP_ALIASES: dict[str, list[str]] = {
+    "千牛工作台": ["com.taobao.qianniu"],
+    "千牛卖家": ["com.taobao.qianniu"],
+    "千牛": ["com.taobao.qianniu"],
+    "抖店": [
+        "com.bytedance.ecom.seller",
+        "com.ss.android.ugc.aweme",
+        "com.bytedance.compass",
+    ],
+    "抖音": ["com.ss.android.ugc.aweme"],
+    "闲鱼": ["com.taobao.idlefish"],
+    "淘宝": ["com.taobao.taobao"],
+    "小红书": ["com.xingin.xhs"],
+    "微信": ["com.tencent.mm"],
+    "拼多多": ["com.xunmeng.pinduoduo"],
+    "京东": ["com.jingdong.app.mall"],
+    "美团外卖": ["com.sankuai.meituan.takeoutnew"],
+    "美团": ["com.sankuai.meituan"],
+    "大众点评": ["com.dianping.v1"],
+    "快手": ["com.smile.gifmaker"],
+    "支付宝": ["com.alipay.android.phone.vendor", "com.eg.android.AlipayGphone"],
+    "网易云音乐": ["com.netease.cloudmusic"],
+    "网易云": ["com.netease.cloudmusic"],
+    "qq音乐": ["com.tencent.qqmusic"],
+    "哔哩哔哩": ["tv.danmaku.bili"],
+    "b站": ["tv.danmaku.bili"],
+    "微博": ["com.sina.weibo"],
+}
+
+#: Aliases shorter than this never match as a substring. A one-character alias such as
+#: ``云`` would otherwise swallow unrelated names.
+_MIN_ALIAS_SUBSTRING_LEN = 2
+
+
+def _match_fast_alias(app_name: str, package_set: set[str]) -> str | None:
+    """Resolve ``app_name`` against :data:`FAST_APP_ALIASES`, or ``None``.
+
+    Exact (case-insensitive) matches win outright. Substring matching is one-directional
+    -- the alias must appear inside the user's input -- and only for aliases of at least
+    :data:`_MIN_ALIAS_SUBSTRING_LEN` characters, so "音乐" no longer silently resolves to
+    QQ 音乐 via the reverse direction and short inputs do not collide.
+    """
+    norm = app_name.strip().lower()
+    if not norm:
+        return None
+
+    def first_installed(candidates: list[str]) -> str | None:
+        return next((c for c in candidates if c in package_set), None)
+
+    exact = FAST_APP_ALIASES.get(norm)
+    if exact is not None:
+        hit = first_installed(exact)
+        if hit:
+            return hit
+
+    for alias, candidates in FAST_APP_ALIASES.items():
+        if len(alias) < _MIN_ALIAS_SUBSTRING_LEN or alias not in norm:
+            continue
+        hit = first_installed(candidates)
+        if hit:
+            return hit
+    return None
+
+
 class LaunchAppArgs(BaseModel):
     """Arguments schema for launching an application."""
 
@@ -77,40 +145,13 @@ async def find_package(ctx: ArtemisContext, app_name: str, use_fallback: bool = 
                 package_cache[app_name] = app_name
             return app_name
 
-        # Fast path 2: Instant Zero-LLM alias lookup for high-frequency Chinese E-commerce & Social Apps
-        app_name_norm = app_name.strip().lower()
-        FAST_APP_ALIASES: dict[str, list[str]] = {
-            "千牛": ["com.taobao.qianniu"],
-            "千牛卖家": ["com.taobao.qianniu"],
-            "千牛工作台": ["com.taobao.qianniu"],
-            "抖店": ["com.bytedance.ecom.seller", "com.ss.android.ugc.aweme", "com.bytedance.compass"],
-            "抖音": ["com.ss.android.ugc.aweme"],
-            "闲鱼": ["com.taobao.idlefish"],
-            "淘宝": ["com.taobao.taobao"],
-            "小红书": ["com.xingin.xhs"],
-            "微信": ["com.tencent.mm"],
-            "拼多多": ["com.xunmeng.pinduoduo"],
-            "京东": ["com.jingdong.app.mall"],
-            "美团": ["com.sankuai.meituan"],
-            "美团外卖": ["com.sankuai.meituan.takeoutnew"],
-            "大众点评": ["com.dianping.v1"],
-            "快手": ["com.smile.gifmaker"],
-            "支付宝": ["com.alipay.android.phone.vendor", "com.eg.android.AlipayGphone"],
-            "网易云音乐": ["com.netease.cloudmusic"],
-            "网易云": ["com.netease.cloudmusic"],
-            "qq音乐": ["com.tencent.qqmusic"],
-            "哔哩哔哩": ["tv.danmaku.bili"],
-            "b站": ["tv.danmaku.bili"],
-            "微博": ["com.sina.weibo"],
-        }
-        for alias, candidate_pkgs in FAST_APP_ALIASES.items():
-            if alias in app_name_norm or app_name_norm in alias:
-                for cand in candidate_pkgs:
-                    if cand in package_set:
-                        logger.info(f"[FastLauncher] Zero-LLM hit: '{app_name}' -> '{cand}'")
-                        if isinstance(package_cache, dict):
-                            package_cache[app_name] = cand
-                        return cand
+        # Fast path 2: Instant Zero-LLM alias lookup for high-frequency Chinese apps
+        fast_hit = _match_fast_alias(app_name, package_set)
+        if fast_hit:
+            logger.info(f"[FastLauncher] Zero-LLM hit: '{app_name}' -> '{fast_hit}'")
+            if isinstance(package_cache, dict):
+                package_cache[app_name] = fast_hit
+            return fast_hit
 
         hopper_output: HopperOutput = await hopper(
             ctx=ctx,

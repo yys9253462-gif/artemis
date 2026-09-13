@@ -113,12 +113,14 @@ class DevicePool:
                 stdin=subprocess.DEVNULL,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=timeout if timeout is not None else self._current_query_timeout(),
                 check=False,
             )
             if res.returncode != 0:
                 return None
-            return self._parse_device_lines(res.stdout.splitlines())
+            return self._parse_device_lines((res.stdout or "").splitlines())
         except Exception as exc:
             logger.debug(f"Error querying adb devices: {exc}")
             return None

@@ -99,26 +99,34 @@ class WifiAdbService:
             "output": output
         }
 
+    #: Android 11+ hands out the wireless-debugging connect port from this range.
+    _SNIFF_PORT_RANGE: tuple[int, int] = (35000, 44000)
+    _SNIFF_WORKERS = 300
+    _SNIFF_TIMEOUT_SECONDS = 0.04
+
     def sniff_host_ports_fast(self, host_ip: str) -> list[int]:
-        """High-concurrency (300 workers) socket sniffer to find active wireless debugging port in ~1.2s."""
-        import socket
+        """Find the device's active wireless-debugging port in roughly a second.
+
+        A 9000-port scan is the only way to discover the connect port that Android 11+
+        randomises after pairing. Results come back through ``map`` rather than a shared
+        list, and every socket is closed by its context manager, so an exception in one
+        probe cannot leak a descriptor or corrupt the result set.
+        """
         import concurrent.futures
+        import socket
 
-        open_ports = []
-        def check_port(p: int):
+        def check_port(port: int) -> int | None:
             try:
-                s = socket.socket()
-                s.settimeout(0.04)
-                if s.connect_ex((host_ip, p)) == 0:
-                    open_ports.append(p)
-                s.close()
-            except Exception:
-                pass
+                with socket.socket() as sock:
+                    sock.settimeout(self._SNIFF_TIMEOUT_SECONDS)
+                    return port if sock.connect_ex((host_ip, port)) == 0 else None
+            except OSError:
+                return None
 
-        # Android 11+ wireless debugging uses random dynamic ports in 35000-44000
-        with concurrent.futures.ThreadPoolExecutor(max_workers=300) as ex:
-            ex.map(check_port, range(35000, 44000))
-        return sorted(open_ports)
+        start, end = self._SNIFF_PORT_RANGE
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self._SNIFF_WORKERS) as ex:
+            results = ex.map(check_port, range(start, end))
+        return sorted(port for port in results if port is not None)
 
     async def pair_device(self, address: str, pairing_code: str, connect_port: str | None = None) -> dict[str, Any]:
         """Pair an Android 11+ wireless debugging device using IP:Port and Pairing Code, then auto-connect with ultra-fast port sniffing."""

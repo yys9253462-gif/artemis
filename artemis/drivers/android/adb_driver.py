@@ -88,6 +88,10 @@ class AndroidAdbDriver(BaseDeviceDriver):
         self._device: AdbDevice | None = None
         self._recording_process: asyncio.subprocess.Process | None = None
         self._recording_output_path: Path | None = None
+        # scrcpy-based recording state. Declared here so the stop path can read them
+        # without hasattr/getattr guards (which silently hide a missing assignment).
+        self._scrcpy_process: asyncio.subprocess.Process | None = None
+        self._recording_mkv_path: Path | None = None
 
     @property
     def device_id(self) -> str:
@@ -341,15 +345,30 @@ class AndroidAdbDriver(BaseDeviceDriver):
                 except Exception as e:
                     logger.debug(f"Clipboard paste fallback to ADB input: {e}")
 
-            # 2. Tier 2: Check or activate ADBKeyboard broadcast (AutoGLM SOTA Pattern)
+            # 2. Tier 2: ADBKeyboard broadcast (AutoGLM SOTA pattern).
+            #
+            # Android answers an unknown broadcast action with
+            # "Broadcast completed: result=0" too, so "result=0" alone proves nothing.
+            # Only take this path when ADBKeyboard really is the active IME -- otherwise
+            # the text is silently dropped and we would never reach Tier 3.
             try:
-                b64_text = base64.b64encode(norm_text.encode("utf-8")).decode("utf-8")
-                # Try broadcasting ADB_INPUT_B64 directly
-                broadcast_res = await asyncio.to_thread(
-                    self.device.shell, f"am broadcast -a ADB_INPUT_B64 --es msg '{b64_text}'"
+                default_ime = await asyncio.to_thread(
+                    self.device.shell, "settings get secure default_input_method"
                 )
-                if "result=0" in str(broadcast_res):
-                    return True
+                if "adbkeyboard" in str(default_ime).lower():
+                    b64_text = base64.b64encode(norm_text.encode("utf-8")).decode("utf-8")
+                    broadcast_res = str(
+                        await asyncio.to_thread(
+                            self.device.shell,
+                            f"am broadcast -a ADB_INPUT_B64 --es msg '{b64_text}'",
+                        )
+                    )
+                    if "result=0" in broadcast_res and "rror" not in broadcast_res:
+                        return True
+                    logger.debug(
+                        f"ADBKeyboard broadcast did not report success, falling back: "
+                        f"{broadcast_res.strip()[:200]}"
+                    )
             except Exception as e:
                 logger.debug(f"ADBKeyboard broadcast failed: {e}")
 
@@ -459,7 +478,7 @@ class AndroidAdbDriver(BaseDeviceDriver):
 
     async def stop_video_recording(self) -> str | None:
         """Stops background video capture and returns local recording file path."""
-        if hasattr(self, "_scrcpy_process") and self._scrcpy_process:
+        if self._scrcpy_process:
             try:
                 self._scrcpy_process.terminate()
                 await asyncio.wait_for(self._scrcpy_process.wait(), timeout=5.0)
@@ -469,8 +488,8 @@ class AndroidAdbDriver(BaseDeviceDriver):
                 logger.debug(f"scrcpy process did not terminate cleanly: {e}")
             self._scrcpy_process = None
 
-        mkv = getattr(self, "_recording_mkv_path", None)
-        mp4 = getattr(self, "_recording_output_path", None)
+        mkv = self._recording_mkv_path
+        mp4 = self._recording_output_path
 
         if mkv and mkv.exists() and mp4:
             try:

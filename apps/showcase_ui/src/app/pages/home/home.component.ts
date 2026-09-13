@@ -154,7 +154,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   public isRefreshingDiagnostics = signal<boolean>(false);
 
   // Wireless ADB Interactive connection signals
-  public wifiHost = signal<string>('192.168.1.100');
+  // Start empty: a hardcoded LAN address only invites a confusing connection
+  // failure when it does not match the user's subnet.
+  public wifiHost = signal<string>('');
   public wifiPort = signal<string>('5555');
   public isConnectingWifi = signal<boolean>(false);
   public wifiConnectMessage = signal<string | null>(null);

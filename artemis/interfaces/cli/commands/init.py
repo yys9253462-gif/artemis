@@ -69,9 +69,15 @@ def init_command() -> None:
                 [adb_path, "devices", "-l"],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=5,
             )
-            lines = [line_str.strip() for line_str in res.stdout.splitlines() if line_str.strip()]
+            lines = [
+                line_str.strip()
+                for line_str in (res.stdout or "").splitlines()
+                if line_str.strip()
+            ]
             for line in lines[1:]:
                 parts = line.split()
                 if len(parts) >= 2 and parts[1] == "device":

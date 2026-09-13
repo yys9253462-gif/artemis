@@ -98,6 +98,8 @@ class Actuator(Protocol):
 
     async def focus_and_clear_text(self, nx: int, ny: int) -> ActionResult: ...
 
+    async def take_over(self, message: str = "") -> ActionResult: ...
+
     # --- Internal observation primitives ---------------------------------------------
 
     async def take_screenshot(self) -> str:

@@ -347,5 +347,22 @@
         "type": "object"
       }
     }
+  },
+  "take_over": {
+    "type": "function",
+    "function": {
+      "name": "take_over",
+      "description": "[ACTION] Request human user to take over the phone for sensitive verification, such as slider captchas, SMS OTP codes, 2FA, biometric authentication, or password entry. Execution pauses until the user completes the manual action and resumes.",
+      "parameters": {
+        "properties": {
+          "message": {
+            "default": "请在手机端协助完成安全验证",
+            "description": "Reason and instructions for the user (e.g. '请在手机端滑动滑块验证码 / 请输入支付密码').",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    }
   }
 }

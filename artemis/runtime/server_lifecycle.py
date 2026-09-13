@@ -42,6 +42,33 @@ from artemis.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
+def _capture_text(args: list[str], timeout: float) -> str | None:
+    """Run ``args`` and return decoded stdout, or ``None`` if the command failed.
+
+    ``text=True`` alone is not safe on Windows: when the child emits bytes that do
+    not decode with the console code page (GBK on a Chinese install, for example),
+    the reader thread dies with ``UnicodeDecodeError`` and ``CompletedProcess.stdout``
+    comes back as ``None`` -- so ``.splitlines()`` raised ``AttributeError`` and
+    ``artemis status`` / ``restart`` / ``stop`` crashed outright. Pinning the codec
+    with ``errors="replace"`` keeps the call total.
+    """
+    try:
+        res = subprocess.run(
+            args,
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+        )
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+    if res.returncode != 0:
+        return None
+    return res.stdout or ""
+
+
 def is_port_in_use(port: int, host: str = "127.0.0.1", timeout: float = 0.5) -> bool:
     """Check whether a TCP port is currently listening / occupied."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -209,57 +236,31 @@ def find_server_pids(port: int = 8000) -> list[int]:
     # 2. Check port listeners with platform-native tools
     # 2a. lsof (macOS & Linux)
     if shutil.which("lsof"):
-        try:
-            res = subprocess.run(
-                ["lsof", "-ti", f":{port}", "-sTCP:LISTEN"],
-                stdin=subprocess.DEVNULL,
-                capture_output=True,
-                text=True,
-                timeout=2.0,
-            )
-            if res.returncode == 0 and res.stdout.strip():
-                for token in res.stdout.strip().splitlines():
-                    token = token.strip()
-                    if token.isdigit():
-                        discovered.add(int(token))
-        except (OSError, ValueError, subprocess.SubprocessError):
-            pass
-
-    # 2b. fuser (Linux fallback)
-    if not discovered and shutil.which("fuser"):
-        try:
-            res = subprocess.run(
-                ["fuser", f"{port}/tcp"],
-                stdin=subprocess.DEVNULL,
-                capture_output=True,
-                text=True,
-                timeout=2.0,
-            )
-            for token in res.stdout.strip().split():
+        out = _capture_text(["lsof", "-ti", f":{port}", "-sTCP:LISTEN"], timeout=2.0)
+        if out:
+            for token in out.splitlines():
                 token = token.strip()
                 if token.isdigit():
                     discovered.add(int(token))
-        except (OSError, ValueError, subprocess.SubprocessError):
-            pass
+
+    # 2b. fuser (Linux fallback)
+    if not discovered and shutil.which("fuser"):
+        out = _capture_text(["fuser", f"{port}/tcp"], timeout=2.0)
+        if out:
+            for token in out.split():
+                token = token.strip()
+                if token.isdigit():
+                    discovered.add(int(token))
 
     # 2c. netstat (Windows fallback)
     if not discovered and sys.platform == "win32":
-        try:
-            res = subprocess.run(
-                ["netstat", "-ano"],
-                stdin=subprocess.DEVNULL,
-                capture_output=True,
-                text=True,
-                timeout=3.0,
-            )
-            if res.returncode == 0:
-                for line in res.stdout.splitlines():
-                    if f":{port}" in line and "LISTENING" in line.upper():
-                        parts = line.strip().split()
-                        if parts and parts[-1].isdigit():
-                            discovered.add(int(parts[-1]))
-        except (OSError, ValueError, subprocess.SubprocessError):
-            pass
+        out = _capture_text(["netstat", "-ano"], timeout=3.0)
+        if out:
+            for line in out.splitlines():
+                if f":{port}" in line and "LISTENING" in line.upper():
+                    parts = line.strip().split()
+                    if parts and parts[-1].isdigit():
+                        discovered.add(int(parts[-1]))
 
     # 2d. psutil net_connections fallback
     if not discovered:

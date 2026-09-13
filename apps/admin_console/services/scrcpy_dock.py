@@ -31,6 +31,8 @@ import subprocess
 import threading
 import time
 
+from artemis.toolchain import find_adb
+
 try:
     import win32api
     import win32con
@@ -70,13 +72,13 @@ class ScrcpyCompanionDock:
 
     def _send_adb_key(self, keycode: str):
         try:
-            cmd = ["adb"]
+            cmd = [find_adb()]
             if self.serial:
                 cmd.extend(["-s", self.serial])
             cmd.extend(["shell", "input", "keyevent", keycode])
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[ScrcpyDock] Failed to send key '{keycode}': {e}")
 
     def _send_clipboard_to_phone(self):
         try:
@@ -85,14 +87,18 @@ class ScrcpyCompanionDock:
             text = win32clipboard.GetClipboardData(win32con.CF_UNICODETEXT)
             win32clipboard.CloseClipboard()
             if text:
-                escaped = text.replace(" ", "%s").replace("\n", "").replace('"', '\\"')
-                cmd = ["adb"]
+                # `adb shell input text` needs literal spaces escaped as %s and does not
+                # accept newlines. Quotes need no escaping: argv is passed straight to
+                # exec, never through a host shell, so wrapping the value in quotes would
+                # type the quote characters into the phone.
+                escaped = text.replace(" ", "%s").replace("\n", "").replace("\r", "")
+                cmd = [find_adb()]
                 if self.serial:
                     cmd.extend(["-s", self.serial])
-                cmd.extend(["shell", "input", "text", f'"{escaped}"'])
+                cmd.extend(["shell", "input", "text", escaped])
                 subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[ScrcpyDock] Failed to send clipboard to phone: {e}")
 
     def run_gui_loop(self):
         # Poll for target scrcpy window (up to 30 attempts, 6 seconds)
