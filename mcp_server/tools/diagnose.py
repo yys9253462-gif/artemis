@@ -34,6 +34,7 @@ from typing import Any
 
 from mcp_server.base import mcp
 from mcp_server.utils import env_utils
+from artemis.config import settings
 from artemis.core.diagnostics import readiness_engine
 from artemis.core.diagnostics.device_smoke import smoke_test_device
 from artemis.core.diagnostics.readiness import (
@@ -370,6 +371,23 @@ async def _handle_launch_avd(
 # --------------------------------------------------------------------------- #
 
 
+def _validation_call(provider: str, key: str) -> tuple[str, dict[str, Any]]:
+    """``(api_key, extra_kwargs)`` for one credential target.
+
+    Endpoint-backed providers (custom / ollama / vllm) carry their *URL* in the key
+    slot and take no real secret. OpenAI-compatible relays need ``OPENAI_BASE_URL``:
+    without it the probe would hit ``api.openai.com`` and report a perfectly good
+    relay key as invalid.
+    """
+    if provider in _ENDPOINT_PROVIDERS:
+        return "EMPTY", {"base_url": key}
+    if provider == "openai":
+        relay = getattr(settings, "OPENAI_BASE_URL", None)
+        if relay:
+            return key, {"base_url": str(relay)}
+    return key, {}
+
+
 async def _verify_credentials(cred_result: ProbeResult | None) -> list[dict[str, Any]]:
     """Check every configured key against its provider; the keys never leave this function."""
     if cred_result is None:
@@ -388,17 +406,16 @@ async def _verify_credentials(cred_result: ProbeResult | None) -> list[dict[str,
     if not targets:
         return []
 
+    calls = [_validation_call(provider, key) for provider, _label, key in targets]
     outcomes = await asyncio.gather(
         *(
             validate_api_key(
                 provider,
-                "EMPTY",
-                base_url=key,
+                api_key,
                 timeout=CREDENTIAL_CHECK_TIMEOUT_SECONDS,
+                **kwargs,
             )
-            if provider in _ENDPOINT_PROVIDERS
-            else validate_api_key(provider, key, timeout=CREDENTIAL_CHECK_TIMEOUT_SECONDS)
-            for provider, _label, key in targets
+            for (provider, _label, _key), (api_key, kwargs) in zip(targets, calls)
         ),
         return_exceptions=True,
     )

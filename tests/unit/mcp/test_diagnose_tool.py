@@ -857,8 +857,59 @@ def test_verify_credentials_calls_endpoint_providers_by_url(temp_trace_env):
     assert "base_url" not in calls["google"].kwargs
 
 
+def test_verify_credentials_uses_the_configured_relay_for_openai(temp_trace_env):
+    """An OpenAI-compatible relay must be reached through OPENAI_BASE_URL.
+
+    Validating against api.openai.com would report a perfectly good relay key as
+    invalid -- which is exactly how a working deployment used to look broken.
+    """
+    validate = AsyncMock(return_value=(True, "verified"))
+    cred = _probe(
+        "gemini_api_key",
+        ProbeStatus.PASS,
+        category=ProbeCategory.CREDENTIALS,
+        metadata={
+            "providers": [
+                {"provider": "openai", "label": "ChatGPT", "raw_key": "SECRET-OPENAI"}
+            ],
+            "api_keys": {},
+        },
+    )
+    probes = [p for p in _healthy_probes() if p.id != "gemini_api_key"] + [cred]
+    with patch.object(diagnose.settings, "OPENAI_BASE_URL", "https://relay.example/v1"):
+        _run(probes, validate=validate, verify_credentials=True)
+
+    call = next(c for c in validate.await_args_list if c.args[0] == "openai")
+    assert call.args[1] == "SECRET-OPENAI"
+    assert call.kwargs["base_url"] == "https://relay.example/v1"
+
+
+def test_verify_credentials_omits_base_url_without_a_relay(temp_trace_env):
+    """Direct OpenAI traffic keeps the provider default endpoint."""
+    validate = AsyncMock(return_value=(True, "verified"))
+    cred = _probe(
+        "gemini_api_key",
+        ProbeStatus.PASS,
+        category=ProbeCategory.CREDENTIALS,
+        metadata={
+            "providers": [
+                {"provider": "openai", "label": "ChatGPT", "raw_key": "SECRET-OPENAI"}
+            ],
+            "api_keys": {},
+        },
+    )
+    probes = [p for p in _healthy_probes() if p.id != "gemini_api_key"] + [cred]
+    with patch.object(diagnose.settings, "OPENAI_BASE_URL", None):
+        _run(probes, validate=validate, verify_credentials=True)
+
+    call = next(c for c in validate.await_args_list if c.args[0] == "openai")
+    assert "base_url" not in call.kwargs
+
+
 def test_invalid_primary_credential_blocks_and_redacts_message(temp_trace_env):
-    async def _validate(provider, api_key, timeout=12.0):
+    # ``**kwargs`` mirrors the real signature: OpenAI-compatible providers are
+    # validated against their configured endpoint (base_url).
+    async def _validate(provider, api_key, timeout=12.0, **kwargs):
         if provider == "google":
             return False, f"Gemini API verification failed (400): key {api_key} invalid"
         if provider == "ocr":

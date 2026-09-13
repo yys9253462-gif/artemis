@@ -116,3 +116,7 @@ live_screenshot*.png
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Stray shell-redirect artifact: a command like `foo > -` writes an 18MB file
+# literally named "-" into the repo root. Never intended to be tracked.
+/-

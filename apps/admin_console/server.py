@@ -167,6 +167,11 @@ async def on_startup():
     wifi_adb_service.start_watchdog()
     # Start the Automation Scheduler Engine
     scheduler_service.start()
+    # Verify the LLM credential in the background: a rotated key otherwise shows up
+    # only as every task failing mid-run with HTTP 401 while readiness stays green.
+    from artemis.runtime.credential_selfcheck import run_and_announce
+
+    asyncio.create_task(run_and_announce())
 
 
 async def on_shutdown():
