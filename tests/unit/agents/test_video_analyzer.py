@@ -74,6 +74,12 @@ async def test_video_analyzer_run():
             AsyncMock(),
         ),
     ):
+        # Share the mocked client on the context: _init_engine then selects
+        # the native engine even without a Google API key (relay setups).
+        mock_ctx._genai_client = mock_client
+        # Share the mocked client on the context: _init_engine then selects
+        # the native engine even without a Google API key (relay setups).
+        mock_ctx._genai_client = mock_client
         analyzer = VideoAnalyzer(mock_ctx)
         result, status = await analyzer.run(
             time_description="from 10s to 15s", purpose="Verify action"
@@ -241,6 +247,12 @@ async def test_video_analyzer_preserves_thought_signature():
             AsyncMock(return_value=Path("/tmp/video.mp4")),
         ),
     ):
+        # Share the mocked client on the context: _init_engine then selects
+        # the native engine even without a Google API key (relay setups).
+        mock_ctx._genai_client = mock_client
+        # Share the mocked client on the context: _init_engine then selects
+        # the native engine even without a Google API key (relay setups).
+        mock_ctx._genai_client = mock_client
         analyzer = VideoAnalyzer(mock_ctx)
         result, status = await analyzer.run(
             time_description="from 10s to 15s", purpose="Verify login"
@@ -450,6 +462,12 @@ async def test_video_analyzer_sub_agent_confidence_validation():
             AsyncMock(return_value=MagicMock(communicate=AsyncMock(return_value=(b"", b"")))),
         ),
     ):
+        # Share the mocked client on the context: _init_engine then selects
+        # the native engine even without a Google API key (relay setups).
+        mock_ctx._genai_client = mock_client
+        # Share the mocked client on the context: _init_engine then selects
+        # the native engine even without a Google API key (relay setups).
+        mock_ctx._genai_client = mock_client
         analyzer = VideoAnalyzer(mock_ctx)
         result, status = await analyzer.run(
             time_description="from 10s to 15s", purpose="Verify login"

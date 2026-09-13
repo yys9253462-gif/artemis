@@ -112,6 +112,9 @@ async def test_explorer_run():
         patch("pathlib.Path.exists", return_value=True),
         patch("pathlib.Path.read_text", return_value=mock_prompt),
         patch("builtins.open", custom_open),
+        # These mocks target the native google-genai runner; pin the engine so a
+        # keyless (relay) environment does not silently reroute to the LangChain loop.
+        patch.object(Explorer, "_detect_native_engine", return_value=True),
     ):
         explorer = Explorer(mock_ctx)
         result = await explorer.run(
@@ -199,6 +202,9 @@ async def test_explorer_submit_answer():
         patch("pathlib.Path.exists", return_value=True),
         patch("pathlib.Path.read_text", return_value=mock_prompt),
         patch("builtins.open", custom_open),
+        # These mocks target the native google-genai runner; pin the engine so a
+        # keyless (relay) environment does not silently reroute to the LangChain loop.
+        patch.object(Explorer, "_detect_native_engine", return_value=True),
     ):
         explorer = Explorer(mock_ctx)
         result = await explorer.run(
@@ -345,6 +351,9 @@ async def test_explorer_submit_answer_self_correction():
         patch("pathlib.Path.exists", return_value=True),
         patch("pathlib.Path.read_text", return_value=mock_prompt),
         patch("builtins.open", custom_open),
+        # These mocks target the native google-genai runner; pin the engine so a
+        # keyless (relay) environment does not silently reroute to the LangChain loop.
+        patch.object(Explorer, "_detect_native_engine", return_value=True),
     ):
         explorer = Explorer(mock_ctx)
         result = await explorer.run(
@@ -434,6 +443,9 @@ async def test_explorer_initial_visual_marking():
         patch("pathlib.Path.exists", return_value=True),
         patch("pathlib.Path.read_text", return_value=mock_prompt),
         patch("builtins.open", custom_open),
+        # These mocks target the native google-genai runner; pin the engine so a
+        # keyless (relay) environment does not silently reroute to the LangChain loop.
+        patch.object(Explorer, "_detect_native_engine", return_value=True),
     ):
         explorer = Explorer(mock_ctx)
         await explorer.run(
@@ -525,6 +537,9 @@ async def test_explorer_initial_visual_marking_previous_screenshot():
         patch("pathlib.Path.exists", return_value=True),
         patch("pathlib.Path.read_text", return_value=mock_prompt),
         patch("builtins.open", custom_open),
+        # These mocks target the native google-genai runner; pin the engine so a
+        # keyless (relay) environment does not silently reroute to the LangChain loop.
+        patch.object(Explorer, "_detect_native_engine", return_value=True),
     ):
         explorer = Explorer(mock_ctx)
         await explorer.run(
@@ -613,6 +628,9 @@ async def test_explorer_initial_visual_marking_previous_screenshot_no_ui_tree():
         patch("pathlib.Path.exists", return_value=True),
         patch("pathlib.Path.read_text", return_value=mock_prompt),
         patch("builtins.open", custom_open),
+        # These mocks target the native google-genai runner; pin the engine so a
+        # keyless (relay) environment does not silently reroute to the LangChain loop.
+        patch.object(Explorer, "_detect_native_engine", return_value=True),
     ):
         explorer = Explorer(mock_ctx)
         await explorer.run(
@@ -711,6 +729,9 @@ async def test_explorer_initial_visual_marking_previous_screenshot_ocr_fusion():
         patch("pathlib.Path.exists", return_value=True),
         patch("pathlib.Path.read_text", return_value=mock_prompt),
         patch("builtins.open", custom_open),
+        # These mocks target the native google-genai runner; pin the engine so a
+        # keyless (relay) environment does not silently reroute to the LangChain loop.
+        patch.object(Explorer, "_detect_native_engine", return_value=True),
     ):
         explorer = Explorer(mock_ctx)
         await explorer.run(
@@ -824,6 +845,9 @@ async def test_explorer_initial_visual_marking_previous_screenshot_on_the_fly_oc
         patch("pathlib.Path.exists", return_value=True),
         patch("pathlib.Path.read_text", return_value=mock_prompt),
         patch("builtins.open", custom_open),
+        # These mocks target the native google-genai runner; pin the engine so a
+        # keyless (relay) environment does not silently reroute to the LangChain loop.
+        patch.object(Explorer, "_detect_native_engine", return_value=True),
     ):
         explorer = Explorer(mock_ctx)
         await explorer.run(
@@ -939,6 +963,9 @@ async def test_explorer_denylisted_tool():
         patch("pathlib.Path.exists", return_value=True),
         patch("pathlib.Path.read_text", return_value=mock_prompt),
         patch("builtins.open", custom_open),
+        # These mocks target the native google-genai runner; pin the engine so a
+        # keyless (relay) environment does not silently reroute to the LangChain loop.
+        patch.object(Explorer, "_detect_native_engine", return_value=True),
     ):
         explorer = Explorer(mock_ctx)
 
