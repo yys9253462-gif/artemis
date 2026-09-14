@@ -94,7 +94,18 @@ git clone https://github.com/google/artemis.git && cd artemis
 ./start.sh
 ```
 
-### Windows PowerShell
+### Windows Automated One-Click Deployment (Recommended)
+
+Double-click **`deploy_windows.bat`** in the project root, or execute in PowerShell / CMD:
+
+```powershell
+# Windows zero-admin automated deployment & launch:
+.\deploy_windows.bat
+```
+
+> **Automated Setup Highlights**: Automatically installs `uv`, configures Python 3.12+ virtualenv, syncs 190+ dependencies, silently equips platform-tools (ADB), FFmpeg, and scrcpy, verifies local ADB daemon, compiles frontend, and launches the web console!
+
+### Windows Manual Launch
 
 ```powershell
 # 1. Clone repo & navigate to directory

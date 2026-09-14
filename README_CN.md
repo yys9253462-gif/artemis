@@ -96,7 +96,18 @@ git clone https://github.com/google/artemis.git && cd artemis
 ./start.sh
 ```
 
-### Windows PowerShell
+### Windows 一键全自动极速部署（推荐）
+
+双击项目根目录下的 **`deploy_windows.bat`**，或在 PowerShell / CMD 终端中运行：
+
+```powershell
+# Windows 一键全自动静默部署与启动（自动装配 uv、ADB、FFmpeg、Scrcpy、依赖及前端）：
+.\deploy_windows.bat
+```
+
+> **自动化特性**：脚本将全自动检测并安装 Python `uv` 管理器、自动静默装配 ADB / FFmpeg / scrcpy 手机工具链、自动同步 190+ 项项目依赖、自动唤醒 ADB 守护进程并构建前端，部署完毕自动拉起 Web 控制台与浏览器！
+
+### 常规启动 (Windows)
 
 ```powershell
 # 1. 克隆代码仓库并进入目录
