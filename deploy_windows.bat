@@ -1,27 +1,27 @@
 @echo off
 rem ==============================================================================
-rem Artemis Windows 一键全自动极速部署与启动脚本
-rem 功能：自动检测并安装 uv、ADB、FFmpeg、scrcpy、Node.js、配置环境、构建前端并自动启动
+rem Artemis 手机智能体 - Windows 一键极速部署与控制台启动脚本
+rem 功能：自动环境体检、静默装配 ADB/FFmpeg/scrcpy、同步运行依赖并唤起控制台
 rem ==============================================================================
 
 chcp 65001 >nul 2>&1
 setlocal EnableDelayedExpansion
-title Artemis Mobile Agent - Windows 一键全自动部署
+title Artemis 手机智能体 - Windows 一键极速部署
 
 cd /d "%~dp0"
 
 echo ==============================================================================
-echo       ☕ Artemis Mobile Agent - Windows 一键全自动部署与环境初始化
+echo       ☕ Artemis 手机智能体 - Windows 一键极速全自动部署程序
 echo ==============================================================================
 echo.
 
-rem 检查以管理员或普通用户权限运行 PowerShell
+rem 绕过 PowerShell 执行策略并执行全自动部署引擎
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\deploy_windows.ps1" %*
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo ------------------------------------------------------------------------------
-    echo ❌ 部署过程中出现异常，请根据上方红色提示排查。
+    echo ❌ 部署或启动过程中遇到异常，请根据上方提示信息进行处理。
     echo ------------------------------------------------------------------------------
     pause
 )
