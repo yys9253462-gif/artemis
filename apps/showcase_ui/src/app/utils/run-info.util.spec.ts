@@ -62,10 +62,10 @@ describe('run-info.util', () => {
 
   describe('tuningLabel', () => {
     it('maps ids to the launcher labels and defaults unknown ids', () => {
-      expect(tuningLabel('verify', 'checkpoints')).toBe('Every step');
-      expect(tuningLabel('verify', 'nonsense')).toBe('At the end');
-      expect(tuningLabel('explore', 'ultra')).toBe('Close-up');
-      expect(tuningLabel('explore', null)).toBe('Quick glance');
+      expect(tuningLabel('verify', 'checkpoints')).toBe('每一步');
+      expect(tuningLabel('verify', 'nonsense')).toBe('任务结束时');
+      expect(tuningLabel('explore', 'ultra')).toBe('局部放大');
+      expect(tuningLabel('explore', null)).toBe('快速一瞥');
     });
   });
 

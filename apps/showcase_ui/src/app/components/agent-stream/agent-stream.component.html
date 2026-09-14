@@ -84,7 +84,7 @@ limitations under the License.
               </span>
               <div class="item-header-actions">
                 @if (getDeviceSerial(session)) {
-                  <span class="item-device" [title]="'Device: ' + getDeviceSerial(session)">
+                  <span class="item-device" [title]="'设备: ' + getDeviceSerial(session)">
                     <span class="material-symbols-outlined device-icon">phone_android</span>
                     <span class="device-name">{{ getDeviceSerial(session) }}</span>
                   </span>
@@ -98,8 +98,8 @@ limitations under the License.
                     type="button"
                     class="btn-stop-card"
                     (click)="stopTask(session.session_id, $event)"
-                    title="Stop this task"
-                    aria-label="Stop this task"
+                    title="停止该任务"
+                    aria-label="停止该任务"
                     >
                     <span class="material-symbols-outlined">stop_circle</span>
                   </button>
@@ -109,8 +109,8 @@ limitations under the License.
                     type="button"
                     class="btn-delete-card"
                     (click)="deleteTask(session.session_id, $event)"
-                    title="Delete this task"
-                    aria-label="Delete this task"
+                    title="删除该任务"
+                    aria-label="删除该任务"
                     >
                     <span class="material-symbols-outlined">delete</span>
                   </button>
@@ -118,7 +118,7 @@ limitations under the License.
               </div>
             </div>
             <div class="item-goal" title="{{ session.initial_goal }}">
-              {{ session.initial_goal || 'Unnamed Task' }}
+              {{ session.initial_goal || '未命名任务' }}
             </div>
             <div class="item-footer">
               <span class="item-id" [title]="session.session_id">ID: {{ session.session_id }}</span>
@@ -152,7 +152,7 @@ limitations under the License.
                 </span>
                 <div class="item-header-actions">
                   @if (getDeviceSerial(session)) {
-                    <span class="item-device" [title]="'Device: ' + getDeviceSerial(session)">
+                    <span class="item-device" [title]="'设备: ' + getDeviceSerial(session)">
                       <span class="material-symbols-outlined device-icon">phone_android</span>
                       <span class="device-name">{{ getDeviceSerial(session) }}</span>
                     </span>
@@ -166,8 +166,8 @@ limitations under the License.
                       type="button"
                       class="btn-delete-card"
                       (click)="deleteTask(session.session_id, $event)"
-                      title="Delete this task"
-                      aria-label="Delete this task"
+                      title="删除该任务"
+                      aria-label="删除该任务"
                       >
                       <span class="material-symbols-outlined">delete</span>
                     </button>
@@ -175,7 +175,7 @@ limitations under the License.
                 </div>
               </div>
               <div class="item-goal" title="{{ session.initial_goal }}">
-                {{ session.initial_goal || 'Unnamed Task' }}
+                {{ session.initial_goal || '未命名任务' }}
               </div>
               <div class="item-footer">
                 <span class="item-id" [title]="session.session_id">ID: {{ session.session_id }}</span>
@@ -415,7 +415,7 @@ limitations under the License.
           (backdropClick)="isRunInfoOpen.set(false)"
           [cdkConnectedOverlayPositions]="dropdownPositions"
         >
-          <div class="vscode-dropdown-menu run-info-dropdown" role="dialog" aria-label="Run info">
+          <div class="vscode-dropdown-menu run-info-dropdown" role="dialog" aria-label="运行信息">
             <div class="run-info-header">
               <span class="material-symbols-outlined" [class.is-pro]="runInfoIsPro()">{{ getModelIcon(model.name) }}</span>
               <span class="run-info-title">{{ getModelDisplayName(model.name) }}</span>
@@ -425,12 +425,12 @@ limitations under the License.
             </div>
 
             <div class="run-info-row">
-              <span class="run-info-label">Elapsed</span>
+              <span class="run-info-label">已耗时</span>
               <span class="run-info-value">{{ runInfoElapsed() }}</span>
             </div>
 
             <div class="run-info-row">
-              <span class="run-info-label">Tokens</span>
+              <span class="run-info-label">Token 消耗</span>
               @if (runUsage(); as usage) {
                 <span class="run-info-value">
                   {{ formatRunTokens(usage.total_tokens) }}
@@ -443,7 +443,7 @@ limitations under the License.
 
             <div class="run-info-row is-stacked">
               <div class="run-info-line">
-                <span class="run-info-label">Context</span>
+                <span class="run-info-label">上下文</span>
                 @if (runInfoContextPercent() !== null) {
                   <span class="run-info-value">
                     {{ runInfoContextPercent() }}%
@@ -464,15 +464,15 @@ limitations under the License.
 
             @if (runInfoIsPro()) {
               <div class="run-info-row">
-                <span class="run-info-label">Result check</span>
+                <span class="run-info-label">结果校验</span>
                 <span class="run-info-value">{{ runTuningLabel('verify', runInfoTuning()?.verification_level) }}</span>
               </div>
               <div class="run-info-row">
-                <span class="run-info-label">Screen reading</span>
+                <span class="run-info-label">屏幕读取</span>
                 <span class="run-info-value">{{ runTuningLabel('explore', runInfoTuning()?.explorer_mode) }}</span>
               </div>
             } @else {
-              <div class="run-info-note">No extra settings for Flash.</div>
+              <div class="run-info-note">Flash 模式暂无额外可调参数</div>
             }
           </div>
         </ng-template>
@@ -520,22 +520,22 @@ limitations under the License.
           </span>
         }
         @if (agentService.isCurrentSessionRunning()) {
-          <span class="btn-text">Recording...</span>
+          <span class="btn-text">录制中...</span>
         }
         @if (!agentService.isCurrentSessionRunning() && agentService.currentSessionRecordingStatus() === 'processing') {
-          <span class="btn-text">Preparing...</span>
+          <span class="btn-text">准备中...</span>
         }
         @if (!agentService.isCurrentSessionRunning() && agentService.currentSessionRecordingStatus() !== 'processing' && agentService.currentSessionVideoUrl()) {
-          <span class="btn-text">Play Recording</span>
+          <span class="btn-text">播放录屏</span>
         }
         @if (!agentService.isCurrentSessionRunning() && agentService.currentSessionRecordingStatus() !== 'processing' && !agentService.currentSessionVideoUrl() && agentService.hasCurrentSessionStepFrames()) {
-          <span class="btn-text">Step Replay</span>
+          <span class="btn-text">单步回放</span>
         }
         @if (!agentService.isCurrentSessionRunning() && agentService.currentSessionRecordingStatus() !== 'processing' && !agentService.currentSessionVideoUrl() && !agentService.hasCurrentSessionStepFrames() && agentService.currentSessionRecordingStatus() === 'failed') {
-          <span class="btn-text">Recording Failed</span>
+          <span class="btn-text">录屏失败</span>
         }
         @if (!agentService.isCurrentSessionRunning() && agentService.currentSessionRecordingStatus() !== 'processing' && !agentService.currentSessionVideoUrl() && !agentService.hasCurrentSessionStepFrames() && agentService.currentSessionRecordingStatus() !== 'failed') {
-          <span class="btn-text">Screen Recording</span>
+          <span class="btn-text">屏幕录制</span>
         }
         @if (agentService.isCurrentSessionRunning()) {
           <span class="video-pulse-dot red"></span>
@@ -554,15 +554,15 @@ limitations under the License.
     @if (agentService.isSessionContentLoading()) {
       <div class="session-loading-state" aria-live="polite">
         <span class="material-symbols-outlined spin-animation">progress_activity</span>
-        <span>Loading run history...</span>
+        <span>正在加载运行历史...</span>
       </div>
     }
 
     @if (!agentService.isSessionContentLoading() && consolidatedBlocks().length === 0 && !showPlanningLoader() && startupWorkItems().length === 0) {
       <div class="empty-state">
         <div class="empty-icon"><span class="material-symbols-outlined">sensors</span></div>
-        <h3>No Stream Activity Selected</h3>
-        <p>Please select a session from the Task List on the right to view its real-time log payloads.</p>
+        <h3>未选择任何实时执行流</h3>
+        <p>请从右侧任务列表中选择一个会话，即可查看其实时日志与执行数据。</p>
       </div>
     }
 
@@ -574,7 +574,7 @@ limitations under the License.
             <div class="phase-header first-phase">
               <span class="phase-worked-time">Worked for {{ startupPreparationDuration() }}s</span>
             </div>
-            <div class="phase-body" aria-label="Task startup progress">
+            <div class="phase-body" aria-label="任务启动进度">
               <div class="block-item type-stream">
                 <div class="step-body">
                   <div class="step-actions-container">
@@ -689,7 +689,7 @@ limitations under the License.
                                     [class.is-running]="isCheckerSegmentRunning(block, itemIdx)">
                                     <div class="report-header">
                                       <span class="stream-status-dot" [class.streaming]="isCheckerSegmentRunning(block, itemIdx)"></span>
-                                      <span class="header-label">Work</span>
+                                      <span class="header-label">工作</span>
                                     </div>
                                     <div class="report-content stream-box">
                                       <div class="stream-text" [innerHTML]="renderMarkdown(item.data.text, block.id + '-seg-' + itemIdx)"></div>
@@ -718,7 +718,7 @@ limitations under the License.
                                     [class.collapsed]="collapsedStreams().has(block.data.execution_id || block.data.step_id || block.id)">
                                     <div class="details-summary" (click)="toggleCollapse(block.data.execution_id || block.data.step_id || block.id)">
                                       <span class="stream-status-dot" [class.streaming]="isBlockRunning(block)"></span>
-                                      <span class="header-label">Thought</span>
+                                      <span class="header-label">思考</span>
                                     </div>
                                     @if (getStreamDisplayText(block.id + '-native', item.data.text)) {
                                       <div class="details-content-wrapper">
@@ -750,7 +750,7 @@ limitations under the License.
                                     [class.is-running]="isBlockRunning(block)">
                                     <div class="report-header">
                                       <span class="stream-status-dot" [class.streaming]="isBlockRunning(block)"></span>
-                                      <span class="header-label">Work</span>
+                                      <span class="header-label">工作</span>
                                     </div>
                                     @if (getStreamDisplayText(block.id, item.data.text)) {
                                       <div class="report-content stream-box">
@@ -772,7 +772,7 @@ limitations under the License.
                                       {{ getReportStatusValue(item.data) === 'failed' ? 'cancel' : 'task_alt' }}
                                     </span>
                                     <span class="action-title">
-                                      {{ getReportStatusValue(item.data) === 'failed' ? 'Task Execution Failed' : 'Task Completed' }}
+                                      {{ getReportStatusValue(item.data) === 'failed' ? '任务执行失败' : '任务已完成' }}
                                     </span>
                                     <span class="action-status-badge" [class.is-failed]="getReportStatusValue(item.data) === 'failed'" [class.is-completed]="getReportStatusValue(item.data) !== 'failed'">
                                       <span class="material-symbols-outlined status-icon">
@@ -809,7 +809,7 @@ limitations under the License.
                                         <div class="expanded-screenshots-container">
                                           @if (getStepPreImageUrl(block.data, item.data)) {
                                             <div class="screenshot-column">
-                                              <span class="screenshot-label">Final Verified State</span>
+                                              <span class="screenshot-label">最终验证状态</span>
                                               <div class="image-wrapper" (click)="openImageModal(getStepPreImageUrl(block.data, item.data)!, item.data, $event)">
                                                 <div class="img-relative-box">
                                                   <img [src]="getStepPreImageUrl(block.data, item.data)" alt="Final Screen Screenshot" />
@@ -819,7 +819,7 @@ limitations under the License.
                                           }
                                           @if (getStepPostImageUrl(block.data, item.data)) {
                                             <div class="screenshot-column">
-                                              <span class="screenshot-label">Post Verification</span>
+                                              <span class="screenshot-label">后置校验</span>
                                               <div class="image-wrapper" (click)="openImageModal(getStepPostImageUrl(block.data, item.data)!, null, $event)">
                                                 <div class="img-relative-box">
                                                   <img [src]="getStepPostImageUrl(block.data, item.data)" alt="Post Screenshot" />
@@ -882,7 +882,7 @@ limitations under the License.
                                       <div class="expanded-grid">
                                         @if (getActionTargetText(item.data)) {
                                           <div class="grid-item">
-                                            <span class="grid-label">Target</span>
+                                            <span class="grid-label">目标</span>
                                             <span class="grid-value">"{{ getActionTargetText(item.data) }}"</span>
                                           </div>
                                         }
@@ -894,19 +894,19 @@ limitations under the License.
                                         }
                                         @if (getActionCoords(item.data)) {
                                           <div class="grid-item">
-                                            <span class="grid-label">Coordinates</span>
+                                            <span class="grid-label">目标坐标</span>
                                             <span class="grid-value code-pill">{{ getActionCoords(item.data) }}</span>
                                           </div>
                                         }
                                         @if (getActionBounds(item.data)) {
                                           <div class="grid-item">
-                                            <span class="grid-label">Target Bounds</span>
+                                            <span class="grid-label">目标区域边界</span>
                                             <span class="grid-value code-pill">[{{ getActionBounds(item.data) }}]</span>
                                           </div>
                                         }
                                         @if (getActionClass(item.data)) {
                                           <div class="grid-item">
-                                            <span class="grid-label">Target Class</span>
+                                            <span class="grid-label">目标控件类名</span>
                                             <span class="grid-value code-pill">{{ getActionClass(item.data) }}</span>
                                           </div>
                                         }
@@ -919,7 +919,7 @@ limitations under the License.
                                         <!-- Fallback item if all detail fields are empty -->
                                         @if (!getActionTargetText(item.data) && !getActionInputText(item.data) && !getActionCoords(item.data) && !getActionBounds(item.data) && !getActionClass(item.data) && getActionExtraParams(item.data).length === 0) {
                                           <div class="grid-item">
-                                            <span class="grid-label">Action</span>
+                                            <span class="grid-label">执行动作</span>
                                             <span class="grid-value">{{ getActionTitle(item.data) }}</span>
                                           </div>
                                         }
@@ -1011,7 +1011,7 @@ limitations under the License.
                                       (click)="hasLLMFailureRetryEntries(item.data) && toggleActionExpanded('llm-failure-' + block.id + '-' + itemIdx, $event)">
                                       <div class="action-card-header llm-failure-header">
                                         <span class="material-symbols-outlined action-icon is-failed">error</span>
-                                        <span class="action-title">LLM Request Failed</span>
+                                        <span class="action-title">大模型请求失败</span>
                                         @if (isTerminalLLMFailure(item.data)) {
                                           <span class="action-status-badge is-paused">
                                             <span class="material-symbols-outlined status-icon">pause_circle</span>
@@ -1032,7 +1032,7 @@ limitations under the License.
                                       <div class="action-card-body">
                                         <div class="action-detail-row">
                                           <span class="detail-label">What happened:</span>
-                                          <span class="detail-value">The AI request could not be completed after automatic retries.</span>
+                                          <span class="detail-value">自动重试后仍无法完成本次 AI 请求。</span>
                                         </div>
                                         <div class="action-detail-row">
                                           <span class="detail-label">Failure reason:</span>
@@ -1046,7 +1046,7 @@ limitations under the License.
                                         }
                                         @if (isActionExpanded('llm-failure-' + block.id + '-' + itemIdx)) {
                                           <div class="failure-retry-details">
-                                            <div class="failure-retry-title">Retry details</div>
+                                            <div class="failure-retry-title">重试详情</div>
                                             @for (retry of getLLMFailureRetryEntries(item.data); track retry; let retryIndex = $index) {
                                               <div class="failure-retry-row">
                                                 <span>Retry {{ retryIndex + 1 }}</span>
@@ -1066,11 +1066,11 @@ limitations under the License.
                                           type="button"
                                           class="btn-continue-task"
                                           (click)="resumePausedTask($event)"
-                                          title="Continue the paused task"
-                                          aria-label="Continue the paused task"
+                                          title="继续被暂停的任务"
+                                          aria-label="继续被暂停的任务"
                                           >
                                           <span class="material-symbols-outlined continue-icon">play_arrow</span>
-                                          <span>Continue task</span>
+                                          <span>继续任务</span>
                                           <span class="material-symbols-outlined continue-arrow">arrow_forward</span>
                                         </button>
                                         <span class="llm-resume-hint">Task paused · no steps are running</span>
@@ -1096,7 +1096,7 @@ limitations under the License.
                                           <span
                                             class="tool-key-pill"
                                             (click)="onToolKeyClick(key)"
-                                            title="Click to view note content"
+                                            title="点击查看笔记详情"
                                             >
                                             <span class="material-symbols-outlined pill-icon">draft</span>
                                             {{ key }}
@@ -1107,7 +1107,7 @@ limitations under the License.
                                           <span
                                             class="tool-key-pill"
                                             (click)="onVideoToolClick(item.data)"
-                                            [title]="'Open recording at ' + getVideoAnalysisRangeLabel(item.data)"
+                                            [title]="'查看该时间点的录屏回放 ' + getVideoAnalysisRangeLabel(item.data)"
                                             >
                                             <span class="material-symbols-outlined pill-icon">videocam</span>
                                             {{ getVideoAnalysisRangeLabel(item.data) }}
@@ -1207,19 +1207,19 @@ limitations under the License.
                                           @if (isAdbCommandTool(item.data)) {
                                             @if (getAdbCommandLine(item.data)) {
                                               <div class="grid-item full-width">
-                                                <span class="grid-label">Command</span>
+                                                <span class="grid-label">命令</span>
                                                 <span class="grid-value command-value"><code>{{ getAdbCommandLine(item.data) }}</code></span>
                                               </div>
                                             }
                                             @if (getAdbCwd(item.data)) {
                                               <div class="grid-item">
-                                                <span class="grid-label">Working Directory</span>
+                                                <span class="grid-label">工作目录</span>
                                                 <span class="grid-value">"{{ getAdbCwd(item.data) }}"</span>
                                               </div>
                                             }
                                             @if (getAdbTerminalId(item.data)) {
                                               <div class="grid-item">
-                                                <span class="grid-label">Terminal ID</span>
+                                                <span class="grid-label">终端会话 ID</span>
                                                 <span class="grid-value code-pill">{{ getAdbTerminalId(item.data) }}</span>
                                               </div>
                                             }
@@ -1227,7 +1227,7 @@ limitations under the License.
                                           @if (!isAdbCommandTool(item.data)) {
                                             @if (getToolTargetText(item.data)) {
                                               <div class="grid-item">
-                                                <span class="grid-label">Target</span>
+                                                <span class="grid-label">目标</span>
                                                 <span class="grid-value">"{{ getToolTargetText(item.data) }}"</span>
                                               </div>
                                             }
@@ -1239,19 +1239,19 @@ limitations under the License.
                                             }
                                             @if (getToolCoords(item.data)) {
                                               <div class="grid-item">
-                                                <span class="grid-label">Coordinates</span>
+                                                <span class="grid-label">目标坐标</span>
                                                 <span class="grid-value code-pill">{{ getToolCoords(item.data) }}</span>
                                               </div>
                                             }
                                             @if (getToolAnalysisText(item.data)) {
                                               <div class="grid-item">
-                                                <span class="grid-label">Analysis</span>
+                                                <span class="grid-label">分析</span>
                                                 <span class="grid-value">"{{ getToolAnalysisText(item.data) }}"</span>
                                               </div>
                                             }
                                             @if (getToolGenericDetails(item.data)) {
                                               <div class="grid-item">
-                                                <span class="grid-label">Details</span>
+                                                <span class="grid-label">详情</span>
                                                 <span class="grid-value">"{{ getToolGenericDetails(item.data) }}"</span>
                                               </div>
                                             }
@@ -1337,12 +1337,12 @@ limitations under the License.
             <div class="synthesis-card-header">
               <div class="header-left">
                 <span class="material-symbols-outlined icon-sparkle">assignment_turned_in</span>
-                <span class="main-title">Task Report</span>
+                <span class="main-title">任务报告</span>
               </div>
               <div class="header-right">
                 <button type="button" class="btn-open-note" (click)="openOutputterNote($event)">
                   <span class="material-symbols-outlined">visibility</span>
-                  <span>View in Notes</span>
+                  <span>在笔记中查看</span>
                 </button>
               </div>
             </div>
@@ -1423,7 +1423,7 @@ limitations under the License.
   @if (selectedZoomImage()) {
     <div class="image-modal-backdrop" (click)="closeImageModal($event)">
       <div class="image-modal-content" (click)="$event.stopPropagation()">
-        <button class="image-modal-close" (click)="closeImageModal($event)" aria-label="Close image preview">
+        <button class="image-modal-close" (click)="closeImageModal($event)" aria-label="关闭图片预览">
           <span class="material-symbols-outlined">close</span>
         </button>
         <div class="img-relative-box">

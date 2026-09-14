@@ -19,7 +19,7 @@ limitations under the License.
   <header class="stream-header">
     <div class="header-title">
       <h2>👣 Real-time Agent Stream (Legacy Card View)</h2>
-      <p class="subtitle">Select a session to monitor raw agent activity</p>
+      <p class="subtitle">选择一个会话以监控智能体原始执行活动</p>
     </div>
 
     <div class="session-selector-wrapper">
@@ -35,7 +35,7 @@ limitations under the License.
           <option
             [value]="session.session_id"
             >
-            {{ session.initial_goal || 'Unnamed Goal' }} ({{ session.device_serial ? session.device_serial + ' · ' : '' }}{{ session.start_time * 1000 | date:'short' }})
+            {{ session.initial_goal || '未命名目标' }} ({{ session.device_serial ? session.device_serial + ' · ' : '' }}{{ session.start_time * 1000 | date:'short' }})
           </option>
         }
       </select>
@@ -48,8 +48,8 @@ limitations under the License.
     @if (agentService.sessionLogs().length === 0) {
       <div class="empty-state">
         <div class="empty-icon">📡</div>
-        <h3>No Stream Activity Selected</h3>
-        <p>Please select a running session from the dropdown above to view real-time log payloads.</p>
+        <h3>未选择任何实时执行流</h3>
+        <p>请在上方下拉框中选择一个运行中的会话，即可查看实时日志与执行数据。</p>
       </div>
     }
 

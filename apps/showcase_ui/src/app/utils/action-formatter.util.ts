@@ -165,60 +165,60 @@ export function getActionIcon(action: any): string {
  */
 export function getActionTitle(action: any): string {
   const act = getActionObject(action);
-  if (!act) return 'Action';
+  if (!act) return '动作';
   const name = (act.name || act.action || '').toLowerCase();
   switch (name) {
     case 'tap':
     case 'click':
     case 'tap_element':
     case 'click_element':
-      return 'Tapping Element';
+      return '点击元素';
     case 'input':
     case 'input_text':
     case 'focus_and_input_text':
-      return 'Entering Text';
+      return '输入文本';
     case 'focus_and_clear_text':
     case 'clear_text':
-      return 'Clearing Text';
+      return '清空文本';
     case 'swipe':
     case 'scroll': {
       const actObj = getActionObject(action);
       const args = actObj?.args && typeof actObj.args === 'object' ? actObj.args : {};
       const dir = actObj?.direction || actObj?.gesture || args.direction || args.gesture || (typeof args.action === 'string' ? args.action : '') || (typeof actObj?.action === 'string' && actObj.action !== name ? actObj.action : '');
       if (dir && isPureDirectionString(dir)) {
-        return `Swiping Screen (${String(dir).toUpperCase()})`;
+        return `滑动屏幕（${String(dir).toUpperCase()}）`;
       }
-      return 'Swiping Screen';
+      return '滑动屏幕';
     }
     case 'drag':
     case 'drag_and_drop':
-      return 'Dragging Screen';
+      return '拖拽屏幕';
     case 'press_key':
     case 'press_home':
     case 'press_back':
-      return 'Pressing Hardware Key';
+      return '按下物理按键';
     case 'launch_app':
     case 'open_app':
-      return 'Launching Application';
+      return '启动应用';
     case 'stop_app':
     case 'close_app':
-      return 'Stopping Application';
+      return '停止应用';
     case 'manage_app': {
       const actObj = getActionObject(action);
       const actStr = (actObj?.action || actObj?.args?.action || '').toLowerCase();
-      if (actStr === 'launch') return 'Launching Application';
-      if (actStr === 'stop' || actStr === 'close') return 'Stopping Application';
-      return 'Managing Application';
+      if (actStr === 'launch') return '启动应用';
+      if (actStr === 'stop' || actStr === 'close') return '停止应用';
+      return '管理应用';
     }
     case 'wait_for_delay':
     case 'delay':
     case 'wait':
-      return 'Waiting for Delay';
+      return '等待延时';
     case 'long_press':
     case 'long_press_on':
-      return 'Long Pressing Element';
+      return '长按元素';
     case 'click_sequence':
-      return 'Clicking Sequence';
+      return '连续点击序列';
     default:
       return name.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
   }
@@ -264,27 +264,27 @@ export function getActionTargetText(action: any): string {
  */
 export function getActionInputLabel(action: any): string {
   const act = getActionObject(action);
-  if (!act) return 'Input';
+  if (!act) return '输入';
   const name = (act.name || act.action || '').toLowerCase();
   if (name.includes('delay') || name.includes('wait')) {
-    return 'Duration';
+    return '时长';
   }
   if (name === 'swipe' || name === 'scroll' || name === 'drag' || name === 'drag_and_drop') {
     const actObj = getActionObject(action);
     const args = actObj?.args && typeof actObj.args === 'object' ? actObj.args : {};
     const dir = actObj?.direction || actObj?.gesture || args.direction || args.gesture || (typeof args.action === 'string' ? args.action : '') || (typeof actObj?.action === 'string' && actObj.action !== name ? actObj.action : '');
     if (dir && isPureDirectionString(dir)) {
-      return 'Direction';
+      return '方向';
     }
-    return 'Input';
+    return '输入';
   }
   if (name === 'press_key' || name.includes('key')) {
-    return 'Key';
+    return '按键';
   }
   if (name === 'input_text' || name.includes('input')) {
-    return 'Input Text';
+    return '输入文本';
   }
-  return 'Input';
+  return '输入';
 }
 
 /**
@@ -450,7 +450,7 @@ export function getActionErrorMessage(action: any, stepData?: any): string {
       }
     }
   }
-  return 'Action Failed';
+  return '动作执行失败';
 }
 
 /**

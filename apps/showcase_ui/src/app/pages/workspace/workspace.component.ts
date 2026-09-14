@@ -127,13 +127,13 @@ export class WorkspaceComponent implements OnInit {
       const truncated = session.initial_goal.length > 45
         ? session.initial_goal.substring(0, 42) + '...'
         : session.initial_goal;
-      return `Stop current task: "${truncated}"`;
+      return `停止当前任务："${truncated}"`;
     }
     const curId = this.agentService.currentSessionId();
     if (curId) {
-      return `Stop current task (${curId})`;
+      return `停止当前任务 (${curId})`;
     }
-    return 'Stop current running task';
+    return '停止当前正在执行的任务';
   });
 
   /**
@@ -259,7 +259,7 @@ export class WorkspaceComponent implements OnInit {
       error: (err) => {
         console.error('Failed to submit task:', err);
         this.isSubmitting.set(false);
-        this.errorMessage.set(err.error?.detail || 'The runner is busy. Please wait for current task to finish.');
+        this.errorMessage.set(err.error?.detail || '执行器正忙，请等待当前任务完成后再下发新指令。');
         setTimeout(() => {
           this.errorMessage.set(null);
         }, 5000);

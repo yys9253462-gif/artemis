@@ -66,8 +66,8 @@ limitations under the License.
         <button
           class="btn-clear-history"
           (click)="clearHistory()"
-          title="Clear all tasks and history"
-          aria-label="Clear all tasks and history"
+          title="清空所有任务与历史执行记录"
+          aria-label="清空所有任务与历史执行记录"
           [disabled]="isSubmitting()"
           >
           <span class="material-symbols-outlined">delete</span>
@@ -189,8 +189,8 @@ limitations under the License.
                       type="button"
                       class="btn-delete-card"
                       (click)="deleteTask(session.session_id, $event)"
-                      title="Delete this task"
-                      aria-label="Delete this task"
+                      title="删除该任务"
+                      aria-label="删除该任务"
                       [disabled]="isSubmitting()"
                       >
                       <span class="material-symbols-outlined">delete</span>
@@ -199,7 +199,7 @@ limitations under the License.
                 </div>
               </div>
               <div class="task-goal" title="{{ session.initial_goal }}">
-                {{ session.initial_goal || 'Unnamed Task' }}
+                {{ session.initial_goal || '未命名任务' }}
               </div>
               <div class="task-card-footer">
                 <span class="task-id" [title]="session.session_id">ID: {{ session.session_id }}</span>
@@ -237,7 +237,7 @@ limitations under the License.
               <span class="material-symbols-outlined">description</span>
             </div>
             <h4 class="empty-notes-title">No Notes & Plans</h4>
-            <p class="empty-notes-subtitle">No notes or structured plans were recorded for this session.</p>
+            <p class="empty-notes-subtitle">本次会话暂未记录任何笔记或结构化任务计划。</p>
           </div>
         }
         <!-- Notes Content Viewer (Clean card blocks matching the second screenshot style) -->

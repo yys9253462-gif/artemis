@@ -90,7 +90,7 @@ describe('startup Work block', () => {
 
     const [item] = buildStartupWorkItems(events, 20, false, true);
 
-    expect(item.message).toBe('UI hierarchy service is ready');
+    expect(item.message).toBe('界面层级感知服务已就绪');
   });
 
   it('uses old first_response events only as a hidden completion boundary', () => {
@@ -101,7 +101,7 @@ describe('startup Work block', () => {
 
     const [item] = buildStartupWorkItems(events, 24, false, true);
 
-    expect(item.message).toBe('Device environment is ready');
+    expect(item.message).toBe('设备运行环境已就绪');
     expect(item.elapsed).toBe('3.0s');
     expect(item.isActive).toBeFalse();
   });

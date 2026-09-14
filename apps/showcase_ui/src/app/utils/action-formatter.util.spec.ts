@@ -250,7 +250,7 @@ describe('extractStepReplayFrames', () => {
     expect(frames.length).toBe(2);
     expect(frames[0].stepNumber).toBe(1);
     expect(frames[0].action?.action).toBe('click');
-    expect(frames[0].actionText).toContain('Tapping Element');
+    expect(frames[0].actionText).toContain('点击元素');
     expect(frames[1].stepNumber).toBe(2);
     expect(frames[1].title).toContain('Report Task Status');
   });

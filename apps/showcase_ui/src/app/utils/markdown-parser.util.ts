@@ -199,7 +199,7 @@ export function extractCheckerResult(text: string): CheckerResult | null {
     if (parsed && typeof parsed === 'object' && 'success' in parsed) {
       return {
         success: Boolean(parsed.success),
-        reason: parsed.reason || 'No reason provided.'
+        reason: parsed.reason || '未提供原因说明。'
       };
     }
   } catch {

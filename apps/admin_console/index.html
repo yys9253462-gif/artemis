@@ -1293,7 +1293,7 @@
             const profile = profileElement ? profileElement.value : 'flash';
             const statusDiv = document.getElementById('run-status');
             if (!goal) {
-                statusDiv.innerHTML = '<span style="color: #e53e3e;">Please enter a goal</span>';
+                statusDiv.innerHTML = '<span style="color: #e53e3e;">请输入任务目标</span>';
                 return;
             }
             statusDiv.innerHTML = '<span style="color: #d69e2e;">Starting task...</span>';
@@ -1625,7 +1625,7 @@
                 select.innerHTML = '';
                 
                 if (devices.length === 0) {
-                    select.innerHTML = '<option value="">No devices detected</option>';
+                    select.innerHTML = '<option value="">未检测到任何设备</option>';
                     return;
                 }
                 

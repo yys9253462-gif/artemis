@@ -940,20 +940,20 @@ export function getSortedStepEvents(
  * Compile human-readable session summary from logs
  */
 export function compileSessionSummary(logs: any[]): string {
-  if (!logs || logs.length === 0) return 'No logs available.';
+  if (!logs || logs.length === 0) return '暂无可用日志。';
 
   // Check for goal completed / checker response / cancellation / report_task_status
   for (let i = logs.length - 1; i >= 0; i--) {
     const log = logs[i];
     if (log.type === 'session_ended') {
       if (log.data?.status === 'cancelled' || log.data?.was_stopped_manually) {
-        return 'Task stopped manually.';
+        return '任务已被手动停止。';
       }
     }
     if (log.type === 'llm_stream' && log.data?.text) {
       const text = log.data.text;
       if (text.includes('```json') && text.includes('"success"')) {
-        return 'Execution completed and verified by checker.';
+        return '执行完成，并已通过校验器核验。';
       }
     }
     if (log.type === 'step_recorded' || log.type === 'step_updated') {
@@ -963,12 +963,12 @@ export function compileSessionSummary(logs: any[]): string {
         if (exp) return exp;
       }
       if (log.data?.status === 'completed') {
-        return log.data.message || 'Task completed successfully.';
+        return log.data.message || '任务已成功完成。';
       }
     }
   }
 
-  return 'Execution session in progress or ended.';
+  return '执行会话进行中或已结束。';
 }
 
 /**
