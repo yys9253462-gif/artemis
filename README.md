@@ -33,8 +33,13 @@
 
 ## Key Highlights
 
-* **Cross-App Automation**: Executes testing workflows and everyday tasks on Android from natural language instructions.
-* **Multimodal Targeting**: Uses element indices when available, with coordinate and visual locating fallbacks for custom interfaces.
+* **Cross-App Automation**: Executes testing workflows, everyday tasks, and cross-platform e-commerce product migrations on Android from natural language instructions.
+* **Multi-Device Co-Pilot**: Supports wireless pairing code discovery, side-by-side dual-screen streaming, multi-device mirror touch sync, and dedicated browser window isolation.
+* **Human-in-the-Loop Safeguard (`take_over`)**: Automatically pauses and alerts the user for sensitive verification (slider captchas, SMS OTP, payment passwords) and resumes seamlessly upon completion.
+* **Zero-LLM Fast Routing & Silent Typing**: Instant zero-token launcher for 20+ top Chinese e-commerce and social apps, paired with ADB Keyboard Base64 silent typing.
+* **Multimodal Targeting & Normalized 0-1000 Grid**: Uses element indices when available, with a resolution-independent 0-1000 coordinate grid and visual locating fallbacks.
+* **Scheduled Task & Automation Center**: Built-in cron scheduler (daily, intervals, one-time) with external Webhook triggers for remote wake-up and execution.
+* **Hardware-Accelerated 60fps Scrcpy Dock**: One-click desktop floating mirror (<30ms latency) equipped with an ultra-smooth sticky physical control bar.
 * **IDE Diagnostics**: **Model Context Protocol (MCP)** integration lets **Antigravity, Claude Code, and Windsurf** drive test devices and collect **Logcat** output and screenshots.
 * **Flash Execution**: A reactive observe-and-act loop with asynchronous history summaries, typically **3–5s per step**.
 * **Pro Exploration**: Checks targets before individual actions and returns blocked actions to the Operator for recovery. Supports long-running exploratory and stability tests.

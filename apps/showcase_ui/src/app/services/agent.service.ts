@@ -228,6 +228,16 @@ export class AgentService {
     return this.pendingStartupProgress();
   });
 
+  // Global startup / credential warning surfaced by the workspace shell.
+  // Persisted in localStorage so an SSE warning sent during startup is not lost
+  // when the user opens or reloads /workspace a moment later.
+  public credentialWarning = signal<{
+    status: string;
+    provider: string;
+    model: string;
+    message: string;
+  } | null>(null);
+
   // Notes and Tab States
   public currentNotes = signal<Record<string, string>>({});
   public selectedNoteKey = signal<string>('task_plan.md');
