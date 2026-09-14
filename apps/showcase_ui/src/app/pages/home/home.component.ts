@@ -153,6 +153,17 @@ export class HomeComponent implements OnInit, OnDestroy {
   // Diagnostic re-check state
   public isRefreshingDiagnostics = signal<boolean>(false);
 
+  // Custom Relay Configuration Signals
+  public relayBaseUrl = signal<string>('https://gpt.isoziyuan.com/v1');
+  public relayApiKey = signal<string>('');
+  public relayModel = signal<string>('gemini-3.8-flash-high');
+  public relayFallbackModel = signal<string>('gemini-3.1-pro-high');
+  public showRelayApiKey = signal<boolean>(false);
+  public isTestingRelay = signal<boolean>(false);
+  public isSavingRelay = signal<boolean>(false);
+  public relayMessage = signal<string | null>(null);
+  public relayError = signal<string | null>(null);
+
   // Wireless ADB Interactive connection signals
   // Start empty: a hardcoded LAN address only invites a confusing connection
   // failure when it does not match the user's subnet.
@@ -540,6 +551,23 @@ export class HomeComponent implements OnInit, OnDestroy {
       if (!this.isOcrKeyEdited()) {
         this.ocrKeyInput.set(ocrKey);
       }
+      const envs = this.systemService.modelConfigEnv();
+      if (envs) {
+        if (envs.default_model?.model) {
+          this.relayModel.set(envs.default_model.model);
+        }
+        if (envs.default_model?.fallback?.model) {
+          this.relayFallbackModel.set(envs.default_model.fallback.model);
+        }
+        const openAiKey = keys['openai'] || '';
+        if (openAiKey && !this.relayApiKey()) {
+          this.relayApiKey.set(openAiKey);
+        }
+        const customItem = envs.env_vars?.find(v => v.provider === 'custom');
+        if (customItem?.preview && !customItem.preview.startsWith('****')) {
+          this.relayBaseUrl.set(customItem.preview);
+        }
+      }
     });
   }
 
@@ -767,6 +795,81 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.ocrSaveError.set(err?.error?.detail || err?.message || 'Vision OCR API key test failed.');
       }
     });
+  }
+
+  public testRelayConnection(): void {
+    const url = this.relayBaseUrl().trim();
+    const key = this.relayApiKey().trim();
+    if (!url || !key) {
+      this.relayError.set('请先输入中转站 API 地址和 API Key！');
+      return;
+    }
+    this.isTestingRelay.set(true);
+    this.relayError.set(null);
+    this.relayMessage.set(null);
+
+    this.systemService.testApiKey('openai', key, url).subscribe({
+      next: (res) => {
+        this.isTestingRelay.set(false);
+        if (res?.valid) {
+          this.relayMessage.set('✓ 中转站接口连通性测试通过！');
+        } else {
+          this.relayError.set(res?.message || '中转站验证失败');
+        }
+        setTimeout(() => this.relayMessage.set(null), 5000);
+      },
+      error: (err) => {
+        this.isTestingRelay.set(false);
+        this.relayError.set(err?.error?.detail || err?.message || '中转站连通性测试失败');
+      }
+    });
+  }
+
+  public saveRelayConfiguration(): void {
+    const url = this.relayBaseUrl().trim();
+    const key = this.relayApiKey().trim();
+    const model = this.relayModel().trim() || 'gemini-3.8-flash-high';
+    const fallback = this.relayFallbackModel().trim() || 'gemini-3.1-pro-high';
+
+    if (!url) {
+      this.relayError.set('中转站 API 地址 (Base URL) 不能为空！');
+      return;
+    }
+    if (!key) {
+      this.relayError.set('中转站 API Key 不能为空！');
+      return;
+    }
+
+    this.isSavingRelay.set(true);
+    this.relayError.set(null);
+    this.relayMessage.set('正在验证并写入中转站配置，请稍候...');
+
+    fetch('/api/system/custom-relay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        base_url: url,
+        api_key: key,
+        model: model,
+        fallback_model: fallback
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        this.isSavingRelay.set(false);
+        if (data.status === 'success') {
+          this.relayMessage.set(data.message || '🎉 中转站配置已成功保存并立即生效！');
+          this.systemService.fetchReadiness(true, true).subscribe();
+          this.systemService.fetchModelConfigEnv().subscribe();
+          setTimeout(() => this.relayMessage.set(null), 6000);
+        } else {
+          this.relayError.set(data.detail || '保存失败');
+        }
+      })
+      .catch(err => {
+        this.isSavingRelay.set(false);
+        this.relayError.set('网络异常: ' + err.message);
+      });
   }
 
   public getProviderDisplayName(tab: string): string {

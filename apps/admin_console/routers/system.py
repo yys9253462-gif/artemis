@@ -260,6 +260,96 @@ async def dismiss_emulator():
     return readiness_engine.dismiss_emulator()
 
 
+class UpdateCustomRelayRequest(BaseModel):
+    """Payload to update custom OpenAI-compatible relay endpoint and model settings."""
+    base_url: str = Field(description="Relay service Base URL (e.g. https://gpt.isoziyuan.com/v1)")
+    api_key: str = Field(description="Relay API Key")
+    model: str = Field(default="gemini-3.8-flash-high", description="Primary vision model")
+    fallback_model: str | None = Field(default="gemini-3.1-pro-high", description="Fallback model")
+
+
+@router.post("/custom-relay")
+async def update_custom_relay_configuration(request: UpdateCustomRelayRequest):
+    """Dynamically test, save, and apply custom AI relay configuration to .env and config/artemis.jsonc."""
+    import re
+    from artemis.config.paths import get_config_path, get_env_file
+    from artemis.config import settings
+    from artemis.utils.credentials_validator import validate_api_key
+
+    clean_url = request.base_url.strip().rstrip("/")
+    clean_key = request.api_key.strip()
+    clean_model = request.model.strip() or "gemini-3.8-flash-high"
+    clean_fallback = request.fallback_model.strip() if request.fallback_model else None
+
+    if not clean_url:
+        raise HTTPException(status_code=400, detail="中转站接口地址 (Base URL) 不能为空")
+    if not clean_key:
+        raise HTTPException(status_code=400, detail="中转站 API Key 不能为空")
+
+    # 1. Test connection against the relay endpoint
+    is_valid, msg = await validate_api_key(
+        provider="openai",
+        api_key=clean_key,
+        base_url=clean_url,
+    )
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=f"中转站连通性验证失败: {msg}")
+
+    # 2. Persist to .env
+    env_file = get_env_file()
+    lines_env = []
+    if env_file.exists():
+        lines_env = env_file.read_text(encoding="utf-8").splitlines()
+
+    updated_keys = set()
+    new_lines = []
+    for line in lines_env:
+        if line.startswith("OPENAI_API_KEY=") or line.startswith("#OPENAI_API_KEY=") or line.startswith("# OPENAI_API_KEY="):
+            new_lines.append(f"OPENAI_API_KEY={clean_key}")
+            updated_keys.add("OPENAI_API_KEY")
+        elif line.startswith("OPENAI_BASE_URL=") or line.startswith("#OPENAI_BASE_URL=") or line.startswith("# OPENAI_BASE_URL="):
+            new_lines.append(f"OPENAI_BASE_URL={clean_url}")
+            updated_keys.add("OPENAI_BASE_URL")
+        else:
+            new_lines.append(line)
+
+    if "OPENAI_API_KEY" not in updated_keys:
+        new_lines.append(f"OPENAI_API_KEY={clean_key}")
+    if "OPENAI_BASE_URL" not in updated_keys:
+        new_lines.append(f"OPENAI_BASE_URL={clean_url}")
+
+    env_file.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+
+    # In-memory settings update
+    settings.set_api_key("openai", clean_key, persist_to_env=False)
+    settings.OPENAI_BASE_URL = clean_url
+    os.environ["OPENAI_BASE_URL"] = clean_url
+
+    # 3. Update config/artemis.jsonc default model
+    try:
+        config_path_obj = get_config_path("artemis.jsonc")
+        if config_path_obj.exists():
+            cfg_text = config_path_obj.read_text(encoding="utf-8")
+            def_pattern = r'"default"\s*:\s*\{[^\}]*\}'
+            fallback_part = f',\n    "fallback": {{\n      "provider": "openai",\n      "model": "{clean_fallback}"\n    }}' if clean_fallback else ''
+            new_default = f'"default": {{\n    "provider": "openai",\n    "model": "{clean_model}"{fallback_part}\n  }}'
+            cfg_text_updated = re.sub(def_pattern, new_default, cfg_text, count=1)
+            config_path_obj.write_text(cfg_text_updated, encoding="utf-8")
+    except Exception as exc:
+        pass
+
+    readiness_engine.invalidate_cache()
+    updated_report = await readiness_engine.run_all(force_refresh=True)
+
+    return {
+        "status": "success",
+        "message": f"中转站配置已成功生效！(已连通模型: {clean_model})",
+        "base_url": clean_url,
+        "model": clean_model,
+        "report": updated_report,
+    }
+
+
 class UpdateCredentialsRequest(BaseModel):
     """Payload to update and configure LLM or Vision OCR API credentials."""
 

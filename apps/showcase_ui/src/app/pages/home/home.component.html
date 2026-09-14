@@ -539,8 +539,109 @@
       }
     </div>
     } @else {
-          <!-- CUSTOM CONFIGURATION & .ENV INSPECTOR (NO OCR HERE) -->
-          <div class="custom-config-inspector">
+      <!-- CUSTOM RELAY & MODEL CONFIGURATION VISUAL FORM -->
+      <div class="custom-config-inspector">
+
+      <!-- Section 0: Web Visual Relay Setup Form (Primary) -->
+      <div class="inspector-card" style="border: 1.5px solid #6366f1; background: #ffffff;">
+        <div class="inspector-card-header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+          <div class="inspector-header-left">
+            <span class="material-symbols-outlined header-icon" style="color: #6366f1;">hub</span>
+            <div class="inspector-header-titles">
+              <span class="inspector-title" style="color: #1e1b4b; font-size: 14px;">自定义模型中转站一键配置</span>
+              <span class="inspector-subtitle">直接在此处配置第三方中转站 API 地址、密钥与模型，一键测试连通并保存生效</span>
+            </div>
+          </div>
+          <span class="tag-badge tag-rec" style="background: #e0e7ff; color: #4338ca;">即配即用</span>
+        </div>
+
+        <div style="padding: 16px 0 6px 0;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+            <!-- Relay Base URL -->
+            <div>
+              <label style="font-size: 12px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">中转站 API 地址 (Base URL)</label>
+              <div class="unified-key-wrapper" style="width: 100%; box-sizing: border-box;">
+                <span class="material-symbols-outlined key-prefix-icon">link</span>
+                <input type="text" class="unified-key-input" [ngModel]="relayBaseUrl()" (ngModelChange)="relayBaseUrl.set($event)"
+                  placeholder="如 https://gpt.isoziyuan.com/v1" spellcheck="false" autocomplete="off" />
+              </div>
+            </div>
+
+            <!-- Relay API Key -->
+            <div>
+              <label style="font-size: 12px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">中转站 API 密钥 (API Key)</label>
+              <div class="unified-key-wrapper" style="width: 100%; box-sizing: border-box;">
+                <span class="material-symbols-outlined key-prefix-icon">key</span>
+                <input [type]="showRelayApiKey() ? 'text' : 'password'" class="unified-key-input" [ngModel]="relayApiKey()"
+                  (ngModelChange)="relayApiKey.set($event)" placeholder="sk-..." spellcheck="false" autocomplete="off" />
+                <button type="button" class="btn-icon-action" [title]="showRelayApiKey() ? '隐藏密钥' : '显示明文'"
+                  (click)="showRelayApiKey.update(v => !v)">
+                  <span class="material-symbols-outlined">{{ showRelayApiKey() ? 'visibility_off' : 'visibility' }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+            <!-- Primary Model Name -->
+            <div>
+              <label style="font-size: 12px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">全局默认主模型 (多模态视觉模型)</label>
+              <div class="unified-key-wrapper" style="width: 100%; box-sizing: border-box;">
+                <span class="material-symbols-outlined key-prefix-icon">psychology</span>
+                <input type="text" class="unified-key-input" [ngModel]="relayModel()" (ngModelChange)="relayModel.set($event)"
+                  placeholder="如 gemini-3.8-flash-high / gpt-4o" spellcheck="false" autocomplete="off" />
+              </div>
+            </div>
+
+            <!-- Fallback Model Name -->
+            <div>
+              <label style="font-size: 12px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">故障兜底模型 (选填)</label>
+              <div class="unified-key-wrapper" style="width: 100%; box-sizing: border-box;">
+                <span class="material-symbols-outlined key-prefix-icon">shield</span>
+                <input type="text" class="unified-key-input" [ngModel]="relayFallbackModel()" (ngModelChange)="relayFallbackModel.set($event)"
+                  placeholder="如 gemini-3.1-pro-high / gpt-4o-mini" spellcheck="false" autocomplete="off" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Buttons Row -->
+          <div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end;">
+            <button type="button" class="btn-unified-test" [disabled]="isTestingRelay() || isSavingRelay()" (click)="testRelayConnection()">
+              @if (isTestingRelay()) {
+                <span class="material-symbols-outlined spin">sync</span>
+                <span>正在测试中转连通性...</span>
+              } @else {
+                <span class="material-symbols-outlined">network_check</span>
+                <span>测试连通性</span>
+              }
+            </button>
+
+            <button type="button" class="btn-unified-save btn-dirty" [disabled]="isSavingRelay() || isTestingRelay()" (click)="saveRelayConfiguration()" style="background: #6366f1;">
+              @if (isSavingRelay()) {
+                <span class="material-symbols-outlined spin">sync</span>
+                <span>正在验证并写入...</span>
+              } @else {
+                <span class="material-symbols-outlined">save</span>
+                <span>保存并应用配置</span>
+              }
+            </button>
+          </div>
+
+          <!-- Status Alerts -->
+          @if (relayMessage()) {
+            <div class="credentials-status-alert success" style="margin-top: 12px;">
+              <span class="material-symbols-outlined">check_circle</span>
+              <span>{{ relayMessage() }}</span>
+            </div>
+          }
+          @if (relayError()) {
+            <div class="credentials-status-alert error" style="margin-top: 12px;">
+              <span class="material-symbols-outlined">error</span>
+              <span>{{ relayError() }}</span>
+            </div>
+          }
+        </div>
+      </div>
 
       <!-- Section 1: Active Model Config (artemis.jsonc) -->
       <div class="inspector-card">
