@@ -94,7 +94,14 @@ git clone https://github.com/google/artemis.git && cd artemis
 ./start.sh
 ```
 
-### Windows Automated One-Click Deployment (Recommended)
+### Windows Standalone One-Click Launcher (Zero-Prerequisite)
+
+Download **[`install_artemis.bat`](https://raw.githubusercontent.com/yys9253462-gif/artemis/main/install_artemis.bat)** and double-click to run:
+- **Auto-Download**: Automatically downloads and extracts the latest repository (even without Git);
+- **Auto-Setup**: Configures `uv`, Python sandbox, ADB, FFmpeg, scrcpy, and 190+ dependencies silently;
+- **Auto-Launch**: Starts the web UI and automatically opens your browser.
+
+### Windows Automated One-Click Deployment (Local Repo)
 
 Double-click **`deploy_windows.bat`** in the project root, or execute in PowerShell / CMD:
 

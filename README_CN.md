@@ -96,7 +96,14 @@ git clone https://github.com/google/artemis.git && cd artemis
 ./start.sh
 ```
 
-### Windows 一键全自动极速部署（推荐）
+### Windows 极简独立一键启动器（小白推荐）
+
+如果你不想手动克隆代码仓库，只需下载 **[`install_artemis.bat`](https://raw.githubusercontent.com/yys9253462-gif/artemis/main/install_artemis.bat)** 单文件直接双击运行：
+- **全自动下载**：无 Git 环境时自动下载并解压官方最新源码；
+- **全自动装配**：自动下载 Python 运行时、uv、ADB 调试桥、FFmpeg、scrcpy 及全部算法依赖；
+- **全自动启动**：安装完毕后自动拉起 Web 控制台并在浏览器中弹窗打开！
+
+### Windows 项目内一键部署（已有源码）
 
 双击项目根目录下的 **`deploy_windows.bat`**，或在 PowerShell / CMD 终端中运行：
 
