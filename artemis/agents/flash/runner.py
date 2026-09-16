@@ -105,6 +105,13 @@ _NO_TOOL_CALL_NOTICE = (
 
 _FINAL_TURN_WARNING = "[WARNING] This is your final turn; only 'report_task_status' is available."
 
+_EMPTY_UI_LIST_NOTICE = (
+    "[CURRENT OBSERVATION HAS NO USABLE UI ELEMENT LIST] Do not use a numeric"
+    " target index, including an index remembered from an earlier turn. It cannot"
+    " be resolved on this screen. Use ask_explorer to locate the target, or use"
+    " visible, normalized [x, y] coordinates with a specific target_description."
+)
+
 
 @dataclass
 class _TurnRecord:
@@ -377,6 +384,11 @@ class FlashRunner:
         ephemeral: list[int] = []
         # (text, ephemeral) in tail order.
         per_turn: list[tuple[str, bool]] = [(text, True) for text in (notices or [])]
+        # An empty UIAutomator result is common in custom-drawn screens. Make
+        # the absence explicit for this exact observation so Flash never
+        # reuses an index from history and produces a guaranteed-invalid tap.
+        if not xml_list:
+            per_turn.append((_EMPTY_UI_LIST_NOTICE, True))
         if injected:
             # The wrapper is per-turn; the verbatim body right after it is a
             # regular block that stays until the turn is chunked.

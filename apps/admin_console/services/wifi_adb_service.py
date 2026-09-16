@@ -23,6 +23,7 @@ Features:
 
 import asyncio
 import logging
+import os
 import re
 import subprocess
 import socket
@@ -35,11 +36,38 @@ logger = logging.getLogger("artemis.wifi_adb_service")
 class WifiAdbService:
     """Manages wireless ADB scanning, pairing, and reconnect watchdog."""
 
+    # A short interval makes a Wi-Fi drop recover almost immediately while
+    # still leaving enough time for Android's wireless-debugging service to
+    # reopen its socket after a roaming event.
+    _WATCHDOG_INTERVAL_SECONDS = 2
+
     def __init__(self):
         self._watchdog_task: asyncio.Task | None = None
         self._is_running = False
-        self._known_endpoints: set[str] = set()
+        self._known_endpoints: set[str] = {
+            endpoint.strip()
+            for endpoint in os.getenv("ARTEMIS_WIFI_ADB_ENDPOINTS", "").split(",")
+            if endpoint.strip()
+        }
         self._scanning = False
+        self._reconnect_lock = asyncio.Lock()
+
+    def _persist_known_endpoints(self) -> None:
+        """Keep reconnect targets across a UI-server restart."""
+        from artemis.config.paths import get_env_file
+
+        env_file = get_env_file()
+        endpoints = ",".join(sorted(self._known_endpoints))
+        lines = env_file.read_text(encoding="utf-8").splitlines() if env_file.exists() else []
+        key = "ARTEMIS_WIFI_ADB_ENDPOINTS="
+        replacement = f"{key}{endpoints}"
+        for index, line in enumerate(lines):
+            if line.startswith(key):
+                lines[index] = replacement
+                break
+        else:
+            lines.append(replacement)
+        env_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     async def run_adb_cmd(self, *args: str) -> tuple[int, str, str]:
         """Execute adb command asynchronously and return code, stdout, stderr."""
@@ -92,6 +120,7 @@ class WifiAdbService:
         success = "connected to" in output.lower()
         if success:
             self._known_endpoints.add(address)
+            self._persist_known_endpoints()
             logger.info(f"[WifiAdb] Successfully connected to {address}")
         return {
             "success": success,
@@ -289,14 +318,23 @@ class WifiAdbService:
         logger.info("[WifiAdb] Watchdog loop started.")
         while self._is_running:
             try:
-                await asyncio.sleep(15)
+                await asyncio.sleep(self._WATCHDOG_INTERVAL_SECONDS)
                 devices = await self.get_connected_devices()
                 online_serials = {d["serial"] for d in devices if d["state"] == "device"}
-                
-                for endpoint in list(self._known_endpoints):
-                    if endpoint not in online_serials:
-                        logger.info(f"[WifiAdb Watchdog] Reconnecting offline device: {endpoint}")
-                        await self.connect_device(endpoint)
+
+                missing = set(self._known_endpoints) - online_serials
+                if missing:
+                    # A reconnect can include an mDNS scan. Serialize it so a
+                    # 2-second poll never creates overlapping ADB processes.
+                    async with self._reconnect_lock:
+                        for endpoint in missing:
+                            logger.info(f"[WifiAdb Watchdog] Reconnecting offline device: {endpoint}")
+                            result = await self.connect_device(endpoint)
+                            if not result.get("success"):
+                                # Android 11+ may change its connect port after a
+                                # Wi-Fi transition; mDNS is the authoritative
+                                # rediscovery path in that case.
+                                await self.auto_discover_and_connect()
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -307,6 +345,10 @@ class WifiAdbService:
         if not self._is_running:
             self._is_running = True
             self._watchdog_task = asyncio.create_task(self._watchdog_loop())
+            # A fresh install has no persisted endpoint yet. Paired Android
+            # 11+ devices advertise their current dynamic port over mDNS, so
+            # discover it once instead of waiting for a manual reconnect.
+            asyncio.create_task(self.auto_discover_and_connect())
 
     def stop_watchdog(self):
         """Stop the background reconnect watchdog."""
