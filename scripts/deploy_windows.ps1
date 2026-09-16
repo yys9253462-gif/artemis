@@ -17,7 +17,8 @@
 param(
     [int]$Port = 8000,
     [switch]$NoOpen = $false,
-    [switch]$SkipFrontendBuild = $false
+    [switch]$SkipFrontendBuild = $false,
+    [switch]$SkipLaunch = $false
 )
 
 $ErrorActionPreference = "Continue"
@@ -299,6 +300,11 @@ Write-Host "   • 后端 REST API 文档: http://localhost:$Port/docs" -Foregro
 Write-Host "------------------------------------------------------------------------------" -ForegroundColor Gray
 Write-Host "   [操作提示] 终端按 Ctrl + C 可正常关闭后台服务。" -ForegroundColor DarkGray
 Write-Host ""
+
+if ($SkipLaunch) {
+    Write-Success "全自动环境安装与构建完成（已跳过直接拉起控制台）。"
+    return
+}
 
 if ($NoOpen) {
     & uv run python -m artemis ui --port $Port --no-open

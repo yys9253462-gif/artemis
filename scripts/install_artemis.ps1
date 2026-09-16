@@ -28,6 +28,7 @@ if (Test-Path (Join-Path $ScriptDir "pyproject.toml")) {
 
 function Ensure-SourceCode {
     if (-not (Test-Path (Join-Path $target "pyproject.toml"))) {
+        Write-Host ""
         Write-Host "👉 [1/2] 正在从 GitHub 获取 Artemis 手机智能体最新完整源码..." -ForegroundColor Cyan
         
         $gitInstalled = (Get-Command git -ErrorAction SilentlyContinue) -ne $null
@@ -61,6 +62,25 @@ function Ensure-SourceCode {
             Remove-Item $extractDir -Recurse -Force -ErrorAction SilentlyContinue
         }
         Write-Host "   ✅ 源码下载解压完成！" -ForegroundColor Green
+    }
+}
+
+function Invoke-InstallOnly {
+    Ensure-SourceCode
+    Set-Location $target
+    $deployScript = Join-Path $target "scripts\deploy_windows.ps1"
+    if (Test-Path $deployScript) {
+        Write-Host ""
+        Write-Host "👉 正在执行全自动依赖检测、安装与沙箱构建流程..." -ForegroundColor Cyan
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $deployScript -NoOpen -SkipLaunch
+        Write-Host ""
+        Write-Host "==============================================================================" -ForegroundColor Green
+        Write-Host "   🎉 Artemis 全部环境依赖与沙箱已成功安装完毕！" -ForegroundColor Green
+        Write-Host "==============================================================================" -ForegroundColor Green
+        Write-Host "   💡 提示：您现在可以随时在菜单中输入 [2] 启动服务，或直接运行 run 命令。" -ForegroundColor Gray
+        Write-Host ""
+    } else {
+        Write-Host "❌ 未能在目标目录找到部署脚本: $deployScript" -ForegroundColor Red
     }
 }
 
@@ -125,8 +145,11 @@ function Invoke-RestartService {
     Invoke-StartService
 }
 
-# ----------------- 调度逻辑 -----------------
-if ($Action -eq "start") {
+# ----------------- 命令行参数直接执行 -----------------
+if ($Action -eq "install" -or $Action -eq "setup") {
+    Invoke-InstallOnly
+    exit
+} elseif ($Action -eq "start") {
     Invoke-StartService
     exit
 } elseif ($Action -eq "stop") {
@@ -140,31 +163,33 @@ if ($Action -eq "start") {
     exit
 }
 
-# 交互式主菜单
+# ----------------- 交互式可视化主菜单 -----------------
 Clear-Host
 Write-Host "==============================================================================" -ForegroundColor DarkCyan
 Write-Host "       ☕ Artemis 手机智能体 - Windows 全功能控制与管理中心" -ForegroundColor Cyan
 Write-Host "==============================================================================" -ForegroundColor DarkCyan
 Write-Host ""
-Write-Host "  【1】 🚀 启动 Artemis 服务 (自动装配依赖并打开 Web 控制台)" -ForegroundColor Green
-Write-Host "  【2】 🛑 关闭 Artemis 服务 (安全停止后台进程并释放端口)" -ForegroundColor Red
-Write-Host "  【3】 🔄 重启 Artemis 服务" -ForegroundColor Yellow
-Write-Host "  【4】 📊 查看当前运行状态与设备" -ForegroundColor Cyan
+Write-Host "  【1】 📦 一键安装与配置环境 (自动装配 uv/ADB/FFmpeg/scrcpy/190+依赖/前端)" -ForegroundColor Yellow
+Write-Host "  【2】 🚀 启动 Artemis 服务 (校验环境、启动后台服务并打开 Web 控制台)" -ForegroundColor Green
+Write-Host "  【3】 🛑 关闭 Artemis 服务 (安全停止后台进程并释放 8000 端口)" -ForegroundColor Red
+Write-Host "  【4】 🔄 重启 Artemis 服务 (快速热重启服务进程)" -ForegroundColor Magenta
+Write-Host "  【5】 📊 查看当前运行状态与已连接设备" -ForegroundColor Cyan
 Write-Host "  【0】 🚪 退出程序" -ForegroundColor Gray
 Write-Host ""
 Write-Host "==============================================================================" -ForegroundColor DarkCyan
 
-$choice = Read-Host "👉 请输入选项数字 [默认: 1 (启动)]"
-if ([string]::IsNullOrWhiteSpace($choice)) { $choice = "1" }
+$choice = Read-Host "👉 请输入选项数字 [1-5 / 0, 默认: 2 (启动)]"
+if ([string]::IsNullOrWhiteSpace($choice)) { $choice = "2" }
 
 switch ($choice) {
-    "1" { Invoke-StartService }
-    "2" { Invoke-StopService; Write-Host "按任意键退出..."; [Console]::ReadKey() | Out-Null }
-    "3" { Invoke-RestartService }
-    "4" { Invoke-StatusService; Write-Host "按任意键退出..."; [Console]::ReadKey() | Out-Null }
+    "1" { Invoke-InstallOnly; Write-Host "按任意键返回菜单..."; [Console]::ReadKey() | Out-Null }
+    "2" { Invoke-StartService }
+    "3" { Invoke-StopService; Write-Host "按任意键退出..."; [Console]::ReadKey() | Out-Null }
+    "4" { Invoke-RestartService }
+    "5" { Invoke-StatusService; Write-Host "按任意键退出..."; [Console]::ReadKey() | Out-Null }
     "0" { Write-Host "已退出。" -ForegroundColor Gray; exit }
     Default {
-        Write-Host "无效选项，正在执行默认启动流程..." -ForegroundColor Yellow
+        Write-Host "输入无效，正在执行默认启动流程..." -ForegroundColor Yellow
         Invoke-StartService
     }
 }
