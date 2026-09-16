@@ -15,7 +15,7 @@ try {
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12 -bor [System.Net.SecurityProtocolType]::Tls13
 } catch {}
 
-# 自动解析当前脚本执行所在目录 (无论用户把脚本放在桌面、D盘、移动硬盘均自动识别)
+# 自动解析当前脚本执行所在目录
 $CurrentWorkDir = (Get-Location).Path
 if (-not $CurrentWorkDir -or -not (Test-Path $CurrentWorkDir)) {
     $CurrentWorkDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -24,10 +24,7 @@ if (-not $CurrentWorkDir -or -not (Test-Path $CurrentWorkDir)) {
     $CurrentWorkDir = [Environment]::GetFolderPath('Desktop')
 }
 
-# 智能识别目标目录：
-# 1. 如果当前所在目录下本身就包含 pyproject.toml（说明用户直接把脚本放在了项目根目录下），则直接在当前目录安装运行
-# 2. 如果当前所在目录下已有名为 artemis 的完整项目，则使用当前目录下的 artemis 文件夹
-# 3. 否则，直接在当前用户执行脚本的目录下就地创建并拉取到 .\artemis 子目录中
+# 智能识别目标目录
 if (Test-Path (Join-Path $CurrentWorkDir "pyproject.toml")) {
     $target = $CurrentWorkDir
 } elseif ((Test-Path (Join-Path $CurrentWorkDir "artemis\pyproject.toml")) -and (Test-Path (Join-Path $CurrentWorkDir "artemis\scripts\deploy_windows.ps1"))) {
@@ -193,34 +190,61 @@ if ($Action -eq "install" -or $Action -eq "setup") {
     exit
 }
 
-# ----------------- 交互式可视化主菜单 -----------------
-Clear-Host
-Write-Host "==============================================================================" -ForegroundColor DarkCyan
-Write-Host "       ☕ Artemis 手机智能体 - Windows 全功能控制与管理中心" -ForegroundColor Cyan
-Write-Host "==============================================================================" -ForegroundColor DarkCyan
-Write-Host ""
-Write-Host "  【1】 📦 一键安装与配置环境 (自动装配 uv/ADB/FFmpeg/scrcpy/190+依赖/前端)" -ForegroundColor Yellow
-Write-Host "  【2】 🚀 启动 Artemis 服务 (校验环境、启动后台服务并打开 Web 控制台)" -ForegroundColor Green
-Write-Host "  【3】 🛑 关闭 Artemis 服务 (安全停止后台进程并释放 8000 端口)" -ForegroundColor Red
-Write-Host "  【4】 🔄 重启 Artemis 服务 (快速热重启服务进程)" -ForegroundColor Magenta
-Write-Host "  【5】 📊 查看当前运行状态与已连接设备" -ForegroundColor Cyan
-Write-Host "  【0】 🚪 退出程序" -ForegroundColor Gray
-Write-Host ""
-Write-Host "  当前工作所在目录: $CurrentWorkDir" -ForegroundColor DarkGray
-Write-Host "==============================================================================" -ForegroundColor DarkCyan
+# ----------------- 交互式主循环菜单 (保持常驻不退出) -----------------
+while ($true) {
+    Clear-Host
+    Write-Host "==============================================================================" -ForegroundColor DarkCyan
+    Write-Host "       ☕ Artemis 手机智能体 - Windows 全功能控制与管理中心" -ForegroundColor Cyan
+    Write-Host "==============================================================================" -ForegroundColor DarkCyan
+    Write-Host ""
+    Write-Host "  【1】 📦 一键安装与配置环境 (自动装配 uv/ADB/FFmpeg/scrcpy/190+依赖/前端)" -ForegroundColor Yellow
+    Write-Host "  【2】 🚀 启动 Artemis 服务 (校验环境、启动后台服务并打开 Web 控制台)" -ForegroundColor Green
+    Write-Host "  【3】 🛑 关闭 Artemis 服务 (安全停止后台进程并释放 8000 端口)" -ForegroundColor Red
+    Write-Host "  【4】 🔄 重启 Artemis 服务 (快速热重启服务进程)" -ForegroundColor Magenta
+    Write-Host "  【5】 📊 查看当前运行状态与已连接设备" -ForegroundColor Cyan
+    Write-Host "  【0】 🚪 退出程序" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "  当前工作所在目录: $CurrentWorkDir" -ForegroundColor DarkGray
+    Write-Host "==============================================================================" -ForegroundColor DarkCyan
 
-$choice = Read-Host "👉 请输入选项数字 [1-5 / 0, 默认: 2 (启动)]"
-if ([string]::IsNullOrWhiteSpace($choice)) { $choice = "2" }
+    $choice = Read-Host "👉 请输入选项数字 [1-5 / 0, 默认: 2 (启动)]"
+    if ([string]::IsNullOrWhiteSpace($choice)) { $choice = "2" }
 
-switch ($choice) {
-    "1" { Invoke-InstallOnly; Write-Host "按任意键返回菜单..."; [Console]::ReadKey() | Out-Null }
-    "2" { Invoke-StartService }
-    "3" { Invoke-StopService; Write-Host "按任意键退出..."; [Console]::ReadKey() | Out-Null }
-    "4" { Invoke-RestartService }
-    "5" { Invoke-StatusService; Write-Host "按任意键退出..."; [Console]::ReadKey() | Out-Null }
-    "0" { Write-Host "已退出。" -ForegroundColor Gray; exit }
-    Default {
-        Write-Host "输入无效，正在执行默认启动流程..." -ForegroundColor Yellow
-        Invoke-StartService
+    switch ($choice) {
+        "1" {
+            Invoke-InstallOnly
+            Write-Host "👉 按任意键返回主菜单..." -ForegroundColor Yellow
+            [Console]::ReadKey($true) | Out-Null
+        }
+        "2" {
+            Invoke-StartService
+            Write-Host "👉 服务已退出，按任意键返回主菜单..." -ForegroundColor Yellow
+            [Console]::ReadKey($true) | Out-Null
+        }
+        "3" {
+            Invoke-StopService
+            Write-Host "👉 按任意键返回主菜单..." -ForegroundColor Yellow
+            [Console]::ReadKey($true) | Out-Null
+        }
+        "4" {
+            Invoke-RestartService
+            Write-Host "👉 服务已退出，按任意键返回主菜单..." -ForegroundColor Yellow
+            [Console]::ReadKey($true) | Out-Null
+        }
+        "5" {
+            Invoke-StatusService
+            Write-Host "👉 按任意键返回主菜单..." -ForegroundColor Yellow
+            [Console]::ReadKey($true) | Out-Null
+        }
+        "0" {
+            Write-Host "已退出程序。" -ForegroundColor Gray
+            exit
+        }
+        Default {
+            Write-Host "输入无效，正在执行默认启动流程..." -ForegroundColor Yellow
+            Invoke-StartService
+            Write-Host "👉 服务已退出，按任意键返回主菜单..." -ForegroundColor Yellow
+            [Console]::ReadKey($true) | Out-Null
+        }
     }
 }
