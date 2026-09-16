@@ -15,24 +15,35 @@ try {
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12 -bor [System.Net.SecurityProtocolType]::Tls13
 } catch {}
 
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-if (-not $ScriptDir) {
-    $ScriptDir = [Environment]::GetFolderPath('Desktop')
+# 自动解析当前脚本执行所在目录 (无论用户把脚本放在桌面、D盘、移动硬盘均自动识别)
+$CurrentWorkDir = (Get-Location).Path
+if (-not $CurrentWorkDir -or -not (Test-Path $CurrentWorkDir)) {
+    $CurrentWorkDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+}
+if (-not $CurrentWorkDir -or -not (Test-Path $CurrentWorkDir)) {
+    $CurrentWorkDir = [Environment]::GetFolderPath('Desktop')
 }
 
-# 自动解析安装目标路径
-$target = Join-Path $ScriptDir "artemis"
-if (Test-Path (Join-Path $ScriptDir "pyproject.toml")) {
-    $target = $ScriptDir
+# 智能识别目标目录：
+# 1. 如果当前所在目录下本身就包含 pyproject.toml（说明用户直接把脚本放在了项目根目录下），则直接在当前目录安装运行
+# 2. 如果当前所在目录下已有名为 artemis 的完整项目，则使用当前目录下的 artemis 文件夹
+# 3. 否则，直接在当前用户执行脚本的目录下就地创建并拉取到 .\artemis 子目录中
+if (Test-Path (Join-Path $CurrentWorkDir "pyproject.toml")) {
+    $target = $CurrentWorkDir
+} elseif ((Test-Path (Join-Path $CurrentWorkDir "artemis\pyproject.toml")) -and (Test-Path (Join-Path $CurrentWorkDir "artemis\scripts\deploy_windows.ps1"))) {
+    $target = Join-Path $CurrentWorkDir "artemis"
+} else {
+    $target = Join-Path $CurrentWorkDir "artemis"
 }
 
 function Ensure-SourceCode {
     $hasCompleteRepo = (Test-Path (Join-Path $target "pyproject.toml")) -and (Test-Path (Join-Path $target "scripts\deploy_windows.ps1"))
     if (-not $hasCompleteRepo) {
         Write-Host ""
-        Write-Host "👉 [1/2] 正在从 GitHub 获取 Artemis 手机智能体最新完整源码..." -ForegroundColor Cyan
+        Write-Host "👉 [1/2] 正在拉取 Artemis 手机智能体完整源码到当前目录..." -ForegroundColor Cyan
+        Write-Host "   📂 目标路径: $target" -ForegroundColor Gray
         
-        # 如果目录存在残缺文件，先安全清理
+        # 如果目标目录存在但残缺（如上次网络中断残留），则先清理干净
         if (Test-Path $target) {
             try {
                 Remove-Item -Path $target -Recurse -Force -ErrorAction SilentlyContinue
@@ -76,10 +87,10 @@ function Ensure-SourceCode {
             Remove-Item $extractDir -Recurse -Force -ErrorAction SilentlyContinue
         }
         
-        if (Test-Path (Join-Path $target "pyproject.toml")) {
-            Write-Host "   ✅ 源码下载解压完成！" -ForegroundColor Green
+        if ((Test-Path (Join-Path $target "pyproject.toml")) -and (Test-Path (Join-Path $target "scripts\deploy_windows.ps1"))) {
+            Write-Host "   ✅ 源码已成功就绪于当前目录！" -ForegroundColor Green
         } else {
-            Write-Host "❌ 源码下载失败，请检查网络连接后重试。" -ForegroundColor Red
+            Write-Host "❌ 源码获取失败，请检查网络连接后重试。" -ForegroundColor Red
         }
     }
 }
@@ -195,6 +206,7 @@ Write-Host "  【4】 🔄 重启 Artemis 服务 (快速热重启服务进程)" 
 Write-Host "  【5】 📊 查看当前运行状态与已连接设备" -ForegroundColor Cyan
 Write-Host "  【0】 🚪 退出程序" -ForegroundColor Gray
 Write-Host ""
+Write-Host "  当前工作所在目录: $CurrentWorkDir" -ForegroundColor DarkGray
 Write-Host "==============================================================================" -ForegroundColor DarkCyan
 
 $choice = Read-Host "👉 请输入选项数字 [1-5 / 0, 默认: 2 (启动)]"
