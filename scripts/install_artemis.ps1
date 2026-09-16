@@ -27,16 +27,30 @@ if (Test-Path (Join-Path $ScriptDir "pyproject.toml")) {
 }
 
 function Ensure-SourceCode {
-    if (-not (Test-Path (Join-Path $target "pyproject.toml"))) {
+    $hasCompleteRepo = (Test-Path (Join-Path $target "pyproject.toml")) -and (Test-Path (Join-Path $target "scripts\deploy_windows.ps1"))
+    if (-not $hasCompleteRepo) {
         Write-Host ""
         Write-Host "👉 [1/2] 正在从 GitHub 获取 Artemis 手机智能体最新完整源码..." -ForegroundColor Cyan
         
+        # 如果目录存在残缺文件，先安全清理
+        if (Test-Path $target) {
+            try {
+                Remove-Item -Path $target -Recurse -Force -ErrorAction SilentlyContinue
+            } catch {}
+        }
+        
+        $cloneSuccess = $false
         $gitInstalled = (Get-Command git -ErrorAction SilentlyContinue) -ne $null
         if ($gitInstalled) {
             Write-Host "   [提示] 检测到系统中已安装 Git，正在克隆源码仓库..." -ForegroundColor Gray
-            & git clone https://github.com/yys9253462-gif/artemis.git $target
-        } else {
-            Write-Host "   [提示] 未检测到 Git，正在从 GitHub 官方极速下载源码压缩包..." -ForegroundColor Yellow
+            & git clone --depth 1 https://github.com/yys9253462-gif/artemis.git $target
+            if ($LASTEXITCODE -eq 0 -and (Test-Path (Join-Path $target "pyproject.toml"))) {
+                $cloneSuccess = $true
+            }
+        }
+        
+        if (-not $cloneSuccess) {
+            Write-Host "   [提示] 正在从 GitHub 官方极速下载源码压缩包..." -ForegroundColor Yellow
             $zipFile = Join-Path $env:TEMP "artemis_repo_latest.zip"
             $extractDir = Join-Path $env:TEMP "artemis_extract_temp"
             
@@ -61,7 +75,12 @@ function Ensure-SourceCode {
             Remove-Item $zipFile -Force -ErrorAction SilentlyContinue
             Remove-Item $extractDir -Recurse -Force -ErrorAction SilentlyContinue
         }
-        Write-Host "   ✅ 源码下载解压完成！" -ForegroundColor Green
+        
+        if (Test-Path (Join-Path $target "pyproject.toml")) {
+            Write-Host "   ✅ 源码下载解压完成！" -ForegroundColor Green
+        } else {
+            Write-Host "❌ 源码下载失败，请检查网络连接后重试。" -ForegroundColor Red
+        }
     }
 }
 
