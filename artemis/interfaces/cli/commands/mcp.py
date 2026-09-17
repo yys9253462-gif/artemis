@@ -23,6 +23,7 @@ import threading
 import tomllib
 from typing import Annotated
 
+import yaml
 from mcp_server.base import mcp as agent_mcp
 import mcp_server.tools  # noqa: F401
 from mcp_server.utils import env_utils
@@ -128,6 +129,10 @@ def _get_config_snippet(client: str, python_exe: str, project_root: str) -> dict
                 }
             }
         }
+    elif client == "hermes":
+        # Hermes stores standard stdio MCP servers in config.yaml under
+        # ``mcp_servers``. It does not require a client-specific type field.
+        return {"mcp_servers": {"artemis": config_body}}
     elif client == "vscode":
         return {"servers": {"artemis": {**config_with_cwd, "type": "stdio"}}}
     elif client in ("claude", "claude_code", "claude_desktop"):
@@ -250,6 +255,33 @@ def _merge_json_file(
         return True
     except Exception as e:
         logger.warning(f"Could not update MCP config file {file_path}: {e}")
+        return False
+
+
+def _merge_yaml_file(file_path: Path, server_name: str, server_config: dict) -> bool:
+    """Merge a managed stdio server into a YAML MCP configuration file.
+
+    Hermes uses ``mcp_servers`` in ``config.yaml``. YAML has no standard
+    comment-preserving parser in our dependency set, so only parseable mapping
+    files are rewritten; malformed or non-mapping configurations are left
+    untouched rather than risk destroying a user's settings.
+    """
+    try:
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        existing = file_path.read_text(encoding="utf-8") if file_path.exists() else ""
+        data = yaml.safe_load(existing) if existing.strip() else {}
+        if not isinstance(data, dict):
+            raise ValueError("YAML root must be a mapping")
+        servers = data.setdefault("mcp_servers", {})
+        if not isinstance(servers, dict):
+            raise ValueError("mcp_servers must be a mapping")
+        servers[server_name] = server_config
+        updated = yaml.safe_dump(data, allow_unicode=True, sort_keys=False)
+        if updated != existing:
+            file_path.write_text(updated, encoding="utf-8")
+        return True
+    except Exception as e:
+        logger.warning(f"Could not update YAML MCP config {file_path}: {e}")
         return False
 
 
@@ -472,6 +504,8 @@ def install_rules(client: str, project_root: str) -> list[str]:
             "roo",
             "openclaw",
             "codex",
+            "hermes",
+            "workbuddy",
         ]
         if client == "all"
         else [client]
@@ -680,6 +714,16 @@ def install_mcp_config(client: str, python_exe: str, project_root: str) -> list[
             codex_path = codex_home / "config.toml"
             if _merge_codex_toml(codex_path, server_cfg):
                 installed_paths.append(str(codex_path))
+        elif target == "hermes":
+            server_cfg = snippet["mcp_servers"]["artemis"]
+            hermes_path = Path.home() / "AppData" / "Local" / "hermes" / "config.yaml"
+            if _merge_yaml_file(hermes_path, "artemis", server_cfg):
+                installed_paths.append(str(hermes_path))
+        elif target == "workbuddy":
+            server_cfg = snippet["mcpServers"]["artemis"]
+            workbuddy_path = Path.home() / ".workbuddy" / "mcp.json"
+            if _merge_json_file(workbuddy_path, "artemis", server_cfg):
+                installed_paths.append(str(workbuddy_path))
 
     rules_paths = install_rules(client, project_root)
     installed_paths.extend(rules_paths)
@@ -727,7 +771,7 @@ def mcp_command(
         typer.Option(
             "--install",
             "-i",
-            help="Auto-install and merge ARTEMIS MCP configuration and testing rules into 'antigravity', 'claude', 'cursor', 'windsurf', 'vscode', 'cline', 'roo', 'openclaw', 'codex', or 'all'.",
+            help="Auto-install and merge ARTEMIS MCP configuration and testing rules into 'antigravity', 'claude', 'cursor', 'windsurf', 'vscode', 'cline', 'roo', 'openclaw', 'codex', 'hermes', 'workbuddy', or 'all'.",
         ),
     ] = None,
     generate_config: Annotated[
@@ -735,7 +779,7 @@ def mcp_command(
         typer.Option(
             "--generate-config",
             "-g",
-            help="Output ready-to-use MCP configuration for 'antigravity', 'cursor', 'claude', 'windsurf', 'vscode', 'cline', 'roo', 'openclaw', 'codex', or 'all'.",
+            help="Output ready-to-use MCP configuration for 'antigravity', 'cursor', 'claude', 'windsurf', 'vscode', 'cline', 'roo', 'openclaw', 'codex', 'hermes', 'workbuddy', or 'all'.",
         ),
     ] = None,
 ) -> None:
@@ -759,10 +803,12 @@ def mcp_command(
             "roo_code",
             "openclaw",
             "codex",
+            "hermes",
+            "workbuddy",
             "all",
         ):
             console.print(
-                f"[bold red]Unsupported install target: '{install_config}'. Use 'antigravity', 'claude', 'cursor', 'windsurf', 'vscode', 'cline', 'roo', 'openclaw', 'codex', or 'all'.[/bold red]"
+                f"[bold red]Unsupported install target: '{install_config}'. Use 'antigravity', 'claude', 'cursor', 'windsurf', 'vscode', 'cline', 'roo', 'openclaw', 'codex', 'hermes', 'workbuddy', or 'all'.[/bold red]"
             )
             raise typer.Exit(1)
         installed_paths = install_mcp_config(client, python_exe, project_root)
@@ -804,6 +850,12 @@ def mcp_command(
                 ),
                 "codex (~/.codex/config.toml)": _get_config_snippet(
                     "codex", python_exe, project_root
+                ),
+                "hermes (%LOCALAPPDATA%/hermes/config.yaml)": _get_config_snippet(
+                    "hermes", python_exe, project_root
+                ),
+                "workbuddy (~/.workbuddy/mcp.json)": _get_config_snippet(
+                    "workbuddy", python_exe, project_root
                 ),
             }
             json_str = json.dumps(all_configs, indent=2)

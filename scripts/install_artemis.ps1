@@ -172,6 +172,16 @@ function Invoke-RestartService {
     Invoke-StartService
 }
 
+function Invoke-ConfigureMcpClients {
+    Ensure-SourceCode
+    $mcpScript = Join-Path $target "scripts\register_mcp_clients.ps1"
+    if (Test-Path $mcpScript) {
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $mcpScript
+    } else {
+        Write-Host "❌ 未能找到 MCP 智能体识别脚本: $mcpScript" -ForegroundColor Red
+    }
+}
+
 # ----------------- 命令行参数直接执行 -----------------
 if ($Action -eq "install" -or $Action -eq "setup") {
     Invoke-InstallOnly
@@ -188,6 +198,9 @@ if ($Action -eq "install" -or $Action -eq "setup") {
 } elseif ($Action -eq "status") {
     Invoke-StatusService
     exit
+} elseif ($Action -eq "mcp") {
+    Invoke-ConfigureMcpClients
+    exit
 }
 
 # ----------------- 交互式主循环菜单 (保持常驻不退出) -----------------
@@ -197,17 +210,18 @@ while ($true) {
     Write-Host "       ☕ Artemis 手机智能体 - Windows 全功能控制与管理中心" -ForegroundColor Cyan
     Write-Host "==============================================================================" -ForegroundColor DarkCyan
     Write-Host ""
-    Write-Host "  【1】 📦 一键安装与配置环境 (自动装配 uv/ADB/FFmpeg/scrcpy/190+依赖/前端)" -ForegroundColor Yellow
+    Write-Host "  【1】 📦 一键安装与配置环境 (uv/ADB/FFmpeg/scrcpy/依赖/前端)" -ForegroundColor Yellow
     Write-Host "  【2】 🚀 启动 Artemis 服务 (校验环境、启动后台服务并打开 Web 控制台)" -ForegroundColor Green
     Write-Host "  【3】 🛑 关闭 Artemis 服务 (安全停止后台进程并释放 8000 端口)" -ForegroundColor Red
     Write-Host "  【4】 🔄 重启 Artemis 服务 (快速热重启服务进程)" -ForegroundColor Magenta
     Write-Host "  【5】 📊 查看当前运行状态与已连接设备" -ForegroundColor Cyan
+    Write-Host "  【6】 🧩 识别本机 AI 智能体并添加 MCP" -ForegroundColor Blue
     Write-Host "  【0】 🚪 退出程序" -ForegroundColor Gray
     Write-Host ""
     Write-Host "  当前工作所在目录: $CurrentWorkDir" -ForegroundColor DarkGray
     Write-Host "==============================================================================" -ForegroundColor DarkCyan
 
-    $choice = Read-Host "👉 请输入选项数字 [1-5 / 0, 默认: 2 (启动)]"
+    $choice = Read-Host "👉 请输入选项数字 [1-6 / 0, 默认: 2 (启动)]"
     if ([string]::IsNullOrWhiteSpace($choice)) { $choice = "2" }
 
     switch ($choice) {
@@ -233,6 +247,11 @@ while ($true) {
         }
         "5" {
             Invoke-StatusService
+            Write-Host "👉 按任意键返回主菜单..." -ForegroundColor Yellow
+            [Console]::ReadKey($true) | Out-Null
+        }
+        "6" {
+            Invoke-ConfigureMcpClients
             Write-Host "👉 按任意键返回主菜单..." -ForegroundColor Yellow
             [Console]::ReadKey($true) | Out-Null
         }

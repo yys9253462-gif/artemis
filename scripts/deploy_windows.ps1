@@ -9,7 +9,7 @@
 # 5. 自动检查并生成 .env 环境变量配置文件模板
 # 6. 自动构筑隔离运行沙箱并全量同步 190+ 个项目核心依赖库
 # 7. 自动校验与构建 Web 前端可视化控制台 (Showcase UI)
-# 8. 自动挂载主流 AI IDE 的原生 MCP 协议支持
+# 8. 提示使用独立菜单项配置主流 AI IDE 的原生 MCP 协议支持
 # 9. 自动拉起 Artemis 服务并自动在浏览器中打开工作台
 # ==============================================================================
 
@@ -281,13 +281,10 @@ if ((-not (Test-Path $ShowcaseIndex)) -and (-not (Test-Path $ShowcaseIndexAlt)) 
 }
 
 # ------------------------------------------------------------------------------
-# 步骤 8：挂载 MCP 服务并启动 Web 服务
+# 步骤 8：MCP 配置由独立菜单项执行
 # ------------------------------------------------------------------------------
-Write-Step "[8/8] 自动向 AI IDE 注册原生 MCP 真机操控服务支持..."
-try {
-    & uv run python -m artemis mcp --install all 2>$null | Out-Null
-    Write-Success "已自动为 AI IDE (Antigravity / Cursor / Claude Code / VS Code / Windsurf) 挂载 MCP 协议服务。"
-} catch {}
+Write-Step "[8/8] MCP 智能体识别与配置..."
+Write-Success "已保留现有安装环境；请在主菜单选择【6】识别本机 AI 智能体并添加 MCP。"
 
 Write-Host ""
 Write-Host "==============================================================================" -ForegroundColor Green
