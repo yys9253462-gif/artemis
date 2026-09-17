@@ -10,7 +10,7 @@
 
 - **自然语言操控真机**：把测试、巡检或日常任务交给 AI，在 Android 真机上完成操作。
 - **Flash / Pro 双模式**：Flash 用于明确、快速的操作；Pro 用于需要规划、校验和诊断的复杂流程。
-- **MCP 原生接入**：支持 Codex、Claude Code、Cursor、Windsurf、VS Code、Cline/Roo 等 MCP 工具。
+- **MCP 原生接入**：支持 Codex、Claude Code、Cursor、Windsurf、VS Code、Cline/Roo、Hermes、WorkBuddy 等 MCP 工具。
 - **Web 控制台**：提供环境体检、模型配置、设备连接、任务执行、投屏和执行记录。
 - **安全人工接管**：验证码、短信 OTP、支付密码等敏感步骤会暂停，等待用户处理后继续。
 
@@ -21,6 +21,7 @@
 - 无线 ADB 成功连接后会保存端点；服务启动时通过 mDNS 主动发现已配对设备。
 - 无线断线后约每 **2 秒**检测并重连；Android 11+ 动态端口变化时自动 mDNS 重新发现。
 - Flash 模式在当前 UI 元素列表为空时不再复用历史索引，改用 Explorer 或归一化坐标定位。
+- Windows 菜单提供独立的“识别本机 AI 智能体并添加 MCP”操作，不会重复安装依赖或启动 Web 服务。
 
 ## 快速开始
 
@@ -38,6 +39,14 @@
 
 ```powershell
 .\install_artemis.bat
+```
+
+在菜单中选择 **6「识别本机 AI 智能体并添加 MCP」**，脚本会扫描已安装的受支持客户端，并仅写入 ARTEMIS MCP 配置。完成后会列出成功和失败的客户端；重启对应客户端即可加载工具。
+
+若需要从命令行直接执行该操作：
+
+```powershell
+.\scripts\install_artemis.ps1 -Action mcp
 ```
 
 ### macOS / Linux
@@ -112,6 +121,13 @@ uv run artemis run "打开设置，检查 Wi-Fi 是否已连接，并报告结�
 
 ```powershell
 uv run artemis mcp --install all
+```
+
+也可单独安装到指定客户端：
+
+```powershell
+uv run artemis mcp --install hermes
+uv run artemis mcp --install workbuddy
 ```
 
 安装后可在 AI IDE 中描述真机测试目标；建议同时阅读 [`mcp_server/rules.md`](./mcp_server/rules.md)。
