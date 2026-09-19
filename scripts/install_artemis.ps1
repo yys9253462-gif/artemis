@@ -128,22 +128,60 @@ function Invoke-StopService {
     Ensure-SourceCode
     Set-Location $target
     Write-Host ""
-    Write-Host "👉 正在安全关闭 Artemis 后台服务与进程..." -ForegroundColor Yellow
+    Write-Host "👉 正在强制结束所有 Artemis 相关进程与后台服务..." -ForegroundColor Yellow
+    
+    # 1. 尝试调用官方 CLI 停止
     if (Get-Command uv -ErrorAction SilentlyContinue) {
-        & uv run python -m artemis stop --force 2>$null
+        & uv run python -m artemis stop --force 2>$null | Out-Null
     }
     
-    # 彻底关闭占用 8000 端口及后台 python uvicorn 实例
+    $killedCount = 0
+
+    # 2. 强制终止所有占用 8000 端口的进程
     try {
-        $pids = Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique
-        foreach ($p in $pids) {
-            if ($p -and $p -ne 0) {
+        $portPids = Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique
+        foreach ($p in $portPids) {
+            if ($p -and $p -ne 0 -and $p -ne $PID) {
                 Stop-Process -Id $p -Force -ErrorAction SilentlyContinue
+                $killedCount++
             }
         }
     } catch {}
-    
-    Write-Host "   ✅ Artemis 服务已成功停止，端口 8000 已释放。" -ForegroundColor Green
+
+    # 3. 强制终止命令行中包含 artemis、uvicorn 或对应虚拟环境的所有 Python/uv 进程
+    try {
+        $procs = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
+            $cmd = $_.CommandLine
+            if (-not $cmd) { return $false }
+            return (
+                $cmd -like "*python*artemis*" -or
+                $cmd -like "*uv*artemis*" -or
+                $cmd -like "*uvicorn*artemis*" -or
+                $cmd -like "*artemis\apps\showcase_ui*" -or
+                $cmd -like "*artemis\scripts*" -or
+                $cmd -like "*artemis\.venv*"
+            )
+        }
+        foreach ($proc in $procs) {
+            if ($proc.ProcessId -and $proc.ProcessId -ne $PID) {
+                Stop-Process -Id $proc.ProcessId -Force -ErrorAction SilentlyContinue
+                $killedCount++
+            }
+        }
+    } catch {}
+
+    # 4. 再次确认端口与后台进程状态
+    Start-Sleep -Milliseconds 300
+    $remaining = Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue
+    if ($remaining) {
+        foreach ($r in $remaining) {
+            if ($r.OwningProcess -and $r.OwningProcess -ne 0) {
+                Stop-Process -Id $r.OwningProcess -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+
+    Write-Host "   ✅ 已强制清理全部 Artemis 进程，端口 8000 已彻底释放。" -ForegroundColor Green
     Write-Host ""
 }
 
