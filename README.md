@@ -160,3 +160,9 @@ adb devices -l
 - 开源许可证：[Apache License 2.0](./LICENSE)
 
 欢迎提交 Issue 和 Pull Request，一起完善中文 Android 自动化体验。
+
+### 第三方代码
+
+非 Google 所有的代码按上游项目存放于 [`third_party/`](third_party/)，每个项目包含独立的 `LICENSE` 和 `METADATA`。
+
+- [`third_party/mobile_use`](third_party/mobile_use/)：源于 Minitap, Inc. 的 mobile-use，遵循 Apache License 2.0。
